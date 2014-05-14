@@ -173,3 +173,10 @@ Apache License
       incurred by, or claims asserted against, such Contributor by reason
       of your accepting any such warranty or additional liability.
 
+---------------
+E_PDOStatement is an extension to the PHP scripting language, which is released
+under it's own accord and under, to my knowledge, a license compatible with this
+one. As of 2014-05-13, license information for PHP was available at:
+
+http://www.php.net/license/
+

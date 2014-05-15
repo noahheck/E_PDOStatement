@@ -33,9 +33,9 @@ The result of this will be (on a MySQL database):
 INSERT INTO users SET username = 'admin', password = '45ab6941fed66456afe6239ab875e4fa'
 ```
 
-When correctly configured, the interpolated values are properly escaped appropriately for the database driver, allowing the generated string to be suitable for e.g. log files, backups, etc. 
+When correctly configured, the interpolated values are escaped appropriately for the database driver, allowing the generated string to be suitable for e.g. log files, backups, etc. 
 
-E_PDOStatement supports pre-executiong binding to both named and ? style parameter markers:
+E_PDOStatement supports pre-execution binding to both named and ? style parameter markers:
 ```php
 $query      = "INSERT INTO users SET username = ?, password = ?";
 

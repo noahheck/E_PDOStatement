@@ -30,7 +30,7 @@ echo $stmt->fullQuery;
 The result of this will be (on a MySQL database):
 
 ```
-INSERT INTO users SET username = 'admin', password = '45ab6941fed66456afe6239ab875e4fa';
+INSERT INTO users SET username = 'admin', password = '45ab6941fed66456afe6239ab875e4fa'
 ```
 
 When correctly configured, the interpolated values are properly escaped appropriately for the database driver, allowing the generated string to be suitable for e.g. log files, backups, etc. 

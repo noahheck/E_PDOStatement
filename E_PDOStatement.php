@@ -111,6 +111,11 @@ class E_PDOStatement extends \PDOStatement
 
 		/**
 		 * Otherwise, if we have input parameters, we'll replace ? markers
+		 * UPDATE - we can now accept $key => $value named parameters as well:
+		 * $inputParams = array(
+		 *   ":username" => $username
+		 * , ":password" => $password
+		 * );
 		 */
 		if (is_array($inputParams) && $inputParams !== array())
 		{

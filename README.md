@@ -57,6 +57,22 @@ $params     = array($username, $password);
 $stmt->execute($params);
 
 ```
+
+### Update
+Named $key => $value pairs can now be provided as input arguments to the `$stmt->execute()` method:
+```php
+$query      = "INSERT INTO users SET username = :username, password = :password";
+
+...
+
+$params     = array(
+      ":username" => $username
+    , ":password" => $password
+);
+
+$stmt->execute($params);
+```
+
 You can also generate the full query string without executing the query:
 ```php
 $query      = "INSERT INTO users SET username = :user, password = :password";

@@ -114,10 +114,15 @@ class E_PDOStatement extends \PDOStatement
 		 */
 		if (is_array($inputParams) && $inputParams !== array())
 		{
-			foreach ($inputParams as $replValue)
+			ksort($inputParams);
+			foreach ($inputParams as $key => $replValue)
 			{
-				$replValue = $this->_prepareValue($replValue);
-				$testQuery = preg_replace("/\?/", $replValue, $testQuery, 1);
+				$key 		= (is_numeric($key)) ? "\?" : $key;
+
+				$testParam 	= "/" . $key . "/";
+				$replValue 	= $this->_prepareValue($replValue);
+
+				$testQuery 	= preg_replace($testParam, $replValue, $testQuery, 1);
 			}
 		}
 

@@ -2,6 +2,12 @@
 
 Drop in replacement for default PHP PDOStatement class allowing devs to view an interpolated version of a parameterized query
 
+###Update
+
+E_PDOStatement now has a sister project aimed at providing the same functionality for php devs using the `mysqli` extension:
+
+[E_mysqli](https://github.com/noahheck/E_mysqli)
+
 ##Usage
 
 PHP's PDO are a much improved way for handling database communications, but not being able to view a complete version of the query to be executed on the server after statement parameters have been interpolated can be frustrating. 
@@ -58,8 +64,7 @@ $stmt->execute($params);
 
 ```
 
-### Update
-Named $key => $value pairs can now be provided as input arguments to the `$stmt->execute()` method:
+Named $key => $value pairs can also be provided as input arguments to the `$stmt->execute()` method:
 ```php
 $query      = "INSERT INTO users SET username = :username, password = :password";
 

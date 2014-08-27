@@ -64,7 +64,7 @@ class E_PDOStatement extends \PDOStatement
 	}
 
 	/**
-	 * Overrides te default \PDOStatement method to add the named parameter and it's value to the array of bound values
+	 * Overrides the default \PDOStatement method to add the named parameter and it's value to the array of bound values
 	 * - then accesses and returns parent::bindValue method
 	 * @param str $param
 	 * @param str $value

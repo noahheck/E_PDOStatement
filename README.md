@@ -101,7 +101,7 @@ $password   = passwordPrep($_POST['password']);
 
 $params     = array($username, $password);
 
-$fullQquery = $stmt->interpolateQuery($params);
+$fullQuery  = $stmt->interpolateQuery($params);
 ```
 
 ##Installation

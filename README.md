@@ -4,6 +4,10 @@ Drop in replacement for default PHP PDOStatement class allowing devs to view an 
 
 ###Update
 
+Please update and replace with new version (as of 2014-10-22) to address potential matching issues. This is a drop-in update, so no other changes should be necessary.
+
+###Update
+
 E_PDOStatement now has a sister project aimed at providing the same functionality for php devs using the `mysqli` extension:
 
 [E_mysqli](https://github.com/noahheck/E_mysqli)

@@ -102,7 +102,7 @@ class E_PDOStatement extends \PDOStatement
 				$key 		= (is_numeric($key)) ? "\?" : $key;
 				$value 		= $array;
 
-				$testParam 	= "/" . $key . "/";
+				$testParam 	= "/" . $key . "(?!\w)/";
 				$replValue 	= $this->_prepareValue($value);
 
 				$testQuery 	= preg_replace($testParam, $replValue, $testQuery, 1);
@@ -124,7 +124,7 @@ class E_PDOStatement extends \PDOStatement
 			{
 				$key 		= (is_numeric($key)) ? "\?" : $key;
 
-				$testParam 	= "/" . $key . "/";
+				$testParam 	= "/" . $key . "(?!\w)/";
 				$replValue 	= $this->_prepareValue($replValue);
 
 				$testQuery 	= preg_replace($testParam, $replValue, $testQuery, 1);

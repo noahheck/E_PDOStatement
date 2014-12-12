@@ -112,7 +112,6 @@ class E_PDOStatement extends \PDOStatement
 				{
 					$key 	= (preg_match("/^\:/", $key)) ? $key : ":" . $key;
 				}
-				// $key 		= (is_numeric($key)) ? "\?" : $key;
 				$value 		= $array;
 
 				$testParam 	= "/" . $key . "(?!\w)/";
@@ -148,7 +147,6 @@ class E_PDOStatement extends \PDOStatement
 				{
 					$key 	= (preg_match("/^\:/", $key)) ? $key : ":" . $key;
 				}
-				// $key 		= (is_numeric($key)) ? "\?" : $key;
 
 				$testParam 	= "/" . $key . "(?!\w)/";
 				$replValue 	= $this->_prepareValue($replValue);

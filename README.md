@@ -3,6 +3,9 @@
 Drop in replacement for default PHP PDOStatement class allowing devs to view an interpolated version of a parameterized query
 
 ###Update
+Now allows for input parameters without leading : as per issue #3.
+
+###Update
 
 Please update and replace with new version (as of 2014-10-22) to address potential matching issues. This is a drop-in update, so no other changes should be necessary.
 

@@ -99,7 +99,20 @@ class E_PDOStatement extends \PDOStatement
 
 			foreach ($this->boundParams as $key => $array)
 			{
-				$key 		= (is_numeric($key)) ? "\?" : $key;
+				/**
+				 * UPDATE - Issue #3
+				 * It is acceptable for bound parameters to be provided without the leading :, so if we are not matching
+				 * a ?, we want to check for the presence of the leading : and add it if it is not there.
+				 */
+				if (is_numeric($key))
+				{
+					$key 	= "\?";
+				}
+				else
+				{
+					$key 	= (preg_match("/^\:/", $key)) ? $key : ":" . $key;
+				}
+				// $key 		= (is_numeric($key)) ? "\?" : $key;
 				$value 		= $array;
 
 				$testParam 	= "/" . $key . "(?!\w)/";
@@ -122,7 +135,20 @@ class E_PDOStatement extends \PDOStatement
 			ksort($inputParams);
 			foreach ($inputParams as $key => $replValue)
 			{
-				$key 		= (is_numeric($key)) ? "\?" : $key;
+				/**
+				 * UPDATE - Issue #3
+				 * It is acceptable for bound parameters to be provided without the leading :, so if we are not matching
+				 * a ?, we want to check for the presence of the leading : and add it if it is not there.
+				 */
+				if (is_numeric($key))
+				{
+					$key 	= "\?";
+				}
+				else
+				{
+					$key 	= (preg_match("/^\:/", $key)) ? $key : ":" . $key;
+				}
+				// $key 		= (is_numeric($key)) ? "\?" : $key;
 
 				$testParam 	= "/" . $key . "(?!\w)/";
 				$replValue 	= $this->_prepareValue($replValue);
@@ -175,5 +201,3 @@ class E_PDOStatement extends \PDOStatement
 		return $value;
 	}
 }
-
-?>

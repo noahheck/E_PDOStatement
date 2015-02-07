@@ -110,6 +110,14 @@ Download the file...put it into a suitable location in your application director
 ### Update
 BONUS FILE NOW INCLUDED - composer.json (because, obviously, composer is a good thing to use).
 
+Add to your composer.json to have it loaded when you create your project:
+
+```json
+"require" : {
+	"noahheck/e_pdostatement" : "1.2.*"
+}
+```
+
 You can also clone (or fork) (or fork then clone).
 
 ##Configuration

@@ -114,7 +114,7 @@ Add to your composer.json to have it loaded when you create your project:
 
 ```json
 "require" : {
-	"noahheck/E_PDOStatement" : "1.2.*"
+	"noahheck/e_pdostatement" : "1.2.*"
 }
 ```
 

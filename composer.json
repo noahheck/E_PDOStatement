@@ -1,5 +1,5 @@
 {
-      "name"        : "noahheck/E_PDOStatement"
+      "name"        : "noahheck/e_pdostatement"
     , "description" : "Drop in replacement for default PDOStatement class allowing devs to view an interpolated version of a parameterized query"
     , "keywords"    : ["pdo", "debug", "debugger", "PDOStatement", "query", "sql", "drop-in", "replacement"]
     , "homepage"    : "https://github.com/noahheck/E_PDOStatement"

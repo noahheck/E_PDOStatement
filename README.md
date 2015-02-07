@@ -9,19 +9,13 @@ Now allows for input parameters without leading : as per issue #3.
 
 Please update and replace with new version (as of 2014-10-22) to address potential matching issues. This is a drop-in update, so no other changes should be necessary.
 
-###Update
-
-E_PDOStatement now has a sister project aimed at providing the same functionality for php devs using the `mysqli` extension:
-
-[E_mysqli](https://github.com/noahheck/E_mysqli)
-
 ##Usage
 
 PHP's PDO are a much improved way for handling database communications, but not being able to view a complete version of the query to be executed on the server after statement parameters have been interpolated can be frustrating. 
 
 A common method for obtaining the interpolated query involves usage of outside functions or extending the native `PDOStatement` object and adding a new method to accomplish this.
 
-E_PDOStatement (<strong>E</strong>nhanced PDOStatement) was designed as a solution to this that doesn't require workflow modifications to generate the resultant query string. The generated query string is accessible on the new `PDOStatement` object as a new `fullQuery` property :
+The E_PDOStatement (<strong>E</strong>nhanced PDOStatement) project was designed as a solution to this that doesn't require workflow modifications to generate the resultant query string. The generated query string is accessible on the new `EPDOStatement` object as a new `fullQuery` property :
 
 ```php
 <?php
@@ -113,31 +107,39 @@ $fullQuery  = $stmt->interpolateQuery($params);
 
 ##Installation
 Download the file...put it into a suitable location in your application directory (seriously, it's only one file; 2 if you count the license (Apache) which we all have a copy of lying around somewhere; 3 if you count this).
+### Update
+BONUS FILE NOW INCLUDED - composer.json (because, obviously, composer is a good thing to use).
 
 You can also clone (or fork) (or fork then clone).
 
 ##Configuration
 
-E_PDOStatement extends the native \PDOStatement object, so the PDO object must be configured to use the extended definition:
+The EPDOStatement class extends the native \PDOStatement object, so the PDO object must be configured to use the extended definition:
 
 ```php
 <?php
 
-require_once "E_PDOStatement.php";
+require_once "EPDOStatement.php";// or allow your auto-loader to load the definition e.g.: use \noahheck\EPDOStatement;
 
 $dsn        = "mysql:host=localhost;dbname=myDatabase";
 $pdo        = new PDO($dsn, $dbUsername, $dbPassword);
 
-$pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("E_PDOStatement", array($pdo)));
+$pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("noahheck\EPDOStatement", array($pdo)));
 ```
 
 That's all there is to it. 
 
-Tests have been completed showing this process to be acceptable using a PSR-0 compatible auto-loading scheme as well as across namespaces.
+The classname has been updated to allow strict conformance to PSR-0 autoloading (e.g. removed the _ from the class/filename).
 
-Ideally, your project would have a PDO abstraction/wrapper class allowing you to implement this modification in only one place. If you don't have this luxury, some success was shown with extending the \PDO class to set the ATTR_STATEMENT_CLASS attribute in the constructor of the PDO, though some issues were seen when crossing namespaces.
+Ideally, your project would have a PDO abstraction/wrapper class allowing you to implement this modification in only one place. If you don't have this luxury, success was shown with extending the \PDO class to set the ATTR_STATEMENT_CLASS attribute in the constructor of the PDO.
 
 ##Get in Touch
 There are a lot of forum posts related to or requesting this type of functionality, so hopefully someone somewhere will find it helpful. If it helps you, comments are of course appreciated.
 
 Bugs, new feature requests and pull requests are of course welcome as well. This was created to help our pro team solve an issue, so it was designed around our specific work flow. If it doesn't work for you though, let me know and I'll be happy to explore if I can help you out.
+
+###Update
+
+E_PDOStatement now has a sister project aimed at providing the same functionality for php devs using the `mysqli` extension:
+
+[E_mysqli](https://github.com/noahheck/E_mysqli)

@@ -1,0 +1,23 @@
+{
+      "name"        : "noahheck/E_PDOStatement"
+    , "description" : "Drop in replacement for default PDOStatement class allowing devs to view an interpolated version of a parameterized query"
+    , "keywords"    : ["pdo", "debug", "debugger", "PDOStatement", "query", "sql", "drop-in", "replacement"]
+    , "homepage"    : "https://github.com/noahheck/E_PDOStatement"
+    , "license"     : "Apache-2.0"
+    , "authors"     : [
+        {
+              "name"     : "noahheck"
+            , "role"     : "developer"
+            , "email"    : "myesain84@gmail.com"
+            , "homepage" : "https://github.com/noahheck"
+        }
+    ]
+    , "require"     : {
+            "php"   : ">=5.1.0"
+        }
+    , "autoload"    : {
+        "psr-0" : {
+            "EPDOStatement" : ""
+        }
+    }
+}

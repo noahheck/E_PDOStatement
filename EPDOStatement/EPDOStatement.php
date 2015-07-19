@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2014 github.com/noahheck
+ * Copyright 2015 github.com/noahheck
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-namespace noahheck;
+namespace EPDOStatement;
 
 use \PDO as PDO;
 use \PDOStatement as PDOStatement;
@@ -62,7 +62,10 @@ class EPDOStatement extends PDOStatement
      */
     public function bindParam($param, &$value, $datatype = PDO::PARAM_STR, $length = 0, $driverOptions = false)
     {
-        $this->boundParams[$param] = &$value;
+        $this->boundParams[$param] = array(
+              "value"       => &$value
+            , "datatype"    => $datatype
+        );
 
         return parent::bindParam($param, $value, $datatype, $length, $driverOptions);
     }
@@ -77,7 +80,10 @@ class EPDOStatement extends PDOStatement
      */
     public function bindValue($param, $value, $datatype = PDO::PARAM_STR)
     {
-        $this->boundParams[$param] = $value;
+        $this->boundParams[$param] = array(
+              "value"       => $value
+            , "datatype"    => $datatype
+        );
 
         return parent::bindValue($param, $value, $datatype);
     }
@@ -163,7 +169,7 @@ class EPDOStatement extends PDOStatement
     }
 
     /**
-     * Overrides the default \PDOStatement method to generate the full query string - then accesses and returns 
+     * Overrides the default \PDOStatement method to generate the full query string - then accesses and returns
      * parent::execute method
      * @param array $inputParams
      * @return bool - default of \PDOStatement::execute()
@@ -178,12 +184,12 @@ class EPDOStatement extends PDOStatement
     /**
      * Prepares values for insertion into the resultant query string - if $this->_pdo is a valid PDO object, we'll use
      * that PDO driver's quote method to prepare the query value. Otherwise:
-     * 
+     *
      *      addslashes is not suitable for production logging, etc. You can update this method to perform the necessary
      *      escaping translations for your database driver. Please consider updating your processes to provide a valid
      *      PDO object that can perform the necessary translations and can be updated with your i.e. package management,
      *      PEAR updates, etc.
-     * 
+     *
      * @param str $value - the value to be prepared for injection as a value in the query string
      * @return str $value - prepared $value
      */
@@ -191,11 +197,18 @@ class EPDOStatement extends PDOStatement
     {
         if ($this->_pdo && ($this->_pdo instanceof PDO)) {
 
-            $value = $this->_pdo->quote($value);
+            if (PDO::PARAM_INT === $value['datatype'])
+            {
+                $value = (int) $value['value'];
+            }
+            else
+            {
+                $value = $this->_pdo->quote($value['value']);
+            }
 
         } else {
 
-            $value = "'" . addslashes($value) . "'";
+            $value = "'" . addslashes($value['value']) . "'";
 
         }
 

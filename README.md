@@ -2,6 +2,11 @@
 
 Drop in replacement for default PHP PDOStatement class allowing devs to view an interpolated version of a parameterized query
 
+###Update (2015-07-19)
+Now takes into account bound arguments' datatypes when compiling interpolated string (previously, all values were quoted when it's likely inappropriate to quote INT datatypes). This allows for viewing/using bound values in e.g. LIMIT clauses where the quotes would interfere with processing the resultant query.
+
+Also, modified namespacing and file structure to allow default composer autoloader to work correctly.
+
 ###Update
 Now allows for input parameters without leading : as per issue #3.
 
@@ -11,7 +16,7 @@ Please update and replace with new version (as of 2014-10-22) to address potenti
 
 ##Usage
 
-PHP's PDO are a much improved way for handling database communications, but not being able to view a complete version of the query to be executed on the server after statement parameters have been interpolated can be frustrating. 
+PHP's PDO are a much improved way for handling database communications, but not being able to view a complete version of the query to be executed on the server after statement parameters have been interpolated can be frustrating.
 
 A common method for obtaining the interpolated query involves usage of outside functions or extending the native `PDOStatement` object and adding a new method to accomplish this.
 
@@ -40,7 +45,7 @@ The result of this will be (on a MySQL database):
 INSERT INTO users SET username = 'admin', password = '45ab6941fed66456afe6239ab875e4fa'
 ```
 
-When correctly configured, the interpolated values are escaped appropriately for the database driver, allowing the generated string to be suitable for e.g. log files, backups, etc. 
+When correctly configured, the interpolated values are escaped appropriately for the database driver, allowing the generated string to be suitable for e.g. log files, backups, etc.
 
 E_PDOStatement supports pre-execution binding to both named and ? style parameter markers:
 ```php
@@ -127,15 +132,15 @@ The EPDOStatement class extends the native \PDOStatement object, so the PDO obje
 ```php
 <?php
 
-require_once "EPDOStatement.php";// or allow your auto-loader to load the definition e.g.: use \noahheck\EPDOStatement;
+require_once "EPDOStatement.php";// or allow your auto-loader to load the definition e.g.: use \EPDOStatement\EPDOStatement;
 
 $dsn        = "mysql:host=localhost;dbname=myDatabase";
 $pdo        = new PDO($dsn, $dbUsername, $dbPassword);
 
-$pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("noahheck\EPDOStatement", array($pdo)));
+$pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("EPDOStatement\EPDOStatement", array($pdo)));
 ```
 
-That's all there is to it. 
+That's all there is to it.
 
 The classname has been updated to allow strict conformance to PSR-0 autoloading (e.g. removed the _ from the class/filename).
 

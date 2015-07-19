@@ -157,7 +157,10 @@ class EPDOStatement extends PDOStatement
                 }
 
                 $testParam  = "/" . $key . "(?!\w)/";
-                $replValue  = $this->_prepareValue($replValue);
+                $replValue  = $this->_prepareValue(array(
+                      'value'       => $replValue
+                    , 'datatype'    => PDO::PARAM_STR
+                ));
 
                 $testQuery  = preg_replace($testParam, $replValue, $testQuery, 1);
             }

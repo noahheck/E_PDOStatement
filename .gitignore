@@ -1,6 +1,9 @@
 # Composer vendor directory
 vendor
 
+# Composer composer.lock file
+composer.lock
+
 # PHPUnit local config file
 tests/config/config.php
 

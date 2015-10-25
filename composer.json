@@ -6,18 +6,23 @@
     , "license"     : "Apache-2.0"
     , "authors"     : [
         {
-              "name"     : "noahheck"
-            , "role"     : "developer"
+              "name"     : "Noah Heck"
+            , "role"     : "Developer/Project Manager"
             , "email"    : "myesain84@gmail.com"
             , "homepage" : "https://github.com/noahheck"
         }
     ]
     , "require"     : {
-            "php"   : ">=5.1.0"
-        }
+        "php"                   : ">=5.1.0"
+    }
+    , "require-dev" : {
+          "phpunit/phpunit"     : "4.8.*"
+        , "phpunit/php-invoker" : "*"
+        , "phpunit/dbunit"      : "*"
+    }
     , "autoload"    : {
-        "psr-0" : {
-            "EPDOStatement" : ""
+        "psr-4" : {
+            "EPDOStatement\\" : "src"
         }
     }
 }

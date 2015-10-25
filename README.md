@@ -1,18 +1,14 @@
 #E_PDOStatement
 
-Drop in replacement for default PHP PDOStatement class allowing devs to view an interpolated version of a parameterized query
+Drop in replacement for default PHP PDOStatement class allowing devs to view an interpolated version of a parameterized query. The result is generally suitable for logging activities, debugging and performance analysis.
 
-###Update (2015-07-19)
+####Update (2015-10-24)
+Full PHPUnit Test Suite in place plus re-organization of code
+
+####Update (2015-07-19)
 Now takes into account bound arguments' datatypes when compiling interpolated string (previously, all values were quoted when it's likely inappropriate to quote INT datatypes). This allows for viewing/using bound values in e.g. LIMIT clauses where the quotes would interfere with processing the resultant query.
 
 Also, modified namespacing and file structure to allow default composer autoloader to work correctly.
-
-###Update
-Now allows for input parameters without leading : as per issue #3.
-
-###Update
-
-Please update and replace with new version (as of 2014-10-22) to address potential matching issues. This is a drop-in update, so no other changes should be necessary.
 
 ##Usage
 
@@ -119,11 +115,9 @@ Add to your composer.json to have it loaded when you create your project:
 
 ```json
 "require" : {
-	"noahheck/e_pdostatement" : "dev-master"
+	"noahheck/e_pdostatement" : "2.*"
 }
 ```
-
-You can also clone (or fork) (or fork then clone).
 
 ##Configuration
 
@@ -132,7 +126,11 @@ The EPDOStatement class extends the native \PDOStatement object, so the PDO obje
 ```php
 <?php
 
-require_once "EPDOStatement.php";// or allow your auto-loader to load the definition e.g.: use \EPDOStatement\EPDOStatement;
+require_once "EPDOStatement.php";
+
+-- OR --
+
+require_once "path/to/composer/autoload.php";
 
 $dsn        = "mysql:host=localhost;dbname=myDatabase";
 $pdo        = new PDO($dsn, $dbUsername, $dbPassword);

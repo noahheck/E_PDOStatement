@@ -28,9 +28,9 @@ class EPDOStatement extends PDOStatement
      * needed.
      * @param \PDO $pdo
      */
-    protected function __construct($pdo)
+    protected function __construct(PDO $pdo = null)
     {
-        if ($pdo instanceof PDO) {
+        if ($pdo) {
             $this->_pdo = $pdo;
         }
     }
@@ -190,31 +190,24 @@ class EPDOStatement extends PDOStatement
      *
      *      addslashes is not suitable for production logging, etc. You can update this method to perform the necessary
      *      escaping translations for your database driver. Please consider updating your processes to provide a valid
-     *      PDO object that can perform the necessary translations and can be updated with your i.e. package management,
-     *      PEAR updates, etc.
+     *      PDO object that can perform the necessary translations and can be updated with your e.g. package management,
+     *      etc.
      *
      * @param str $value - the value to be prepared for injection as a value in the query string
      * @return str $value - prepared $value
      */
     private function _prepareValue($value)
     {
-        if ($this->_pdo && ($this->_pdo instanceof PDO)) {
+        if ($this->_pdo) {
 
             if (PDO::PARAM_INT === $value['datatype'])
             {
-                $value = (int) $value['value'];
-            }
-            else
-            {
-                $value = $this->_pdo->quote($value['value']);
+                return (int) $value['value'];
             }
 
-        } else {
-
-            $value = "'" . addslashes($value['value']) . "'";
-
+            return  $this->_pdo->quote($value['value']);
         }
 
-        return $value;
+        return "'" . addslashes($value['value']) . "'";
     }
 }

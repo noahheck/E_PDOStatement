@@ -36,7 +36,7 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 
 		$config = $this->getConfig();
 
-		$this->pdo = new PDO($config['db']['dsn'], $config['db']['user'], $config['db']['password']);
+		$this->pdo = new PDO($config['db']['dsn'], $config['db']['username'], $config['db']['password']);
 
 		$this->pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("EPDOStatement\EPDOStatement", array($this->pdo)));
 
@@ -219,7 +219,7 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 	{
 		$config = $this->getConfig();
 
-		$pdo = new PDO($config['db']['dsn'], $config['db']['user'], $config['db']['password']);
+		$pdo = new PDO($config['db']['dsn'], $config['db']['username'], $config['db']['password']);
 
 		$pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("EPDOStatement\EPDOStatement", array()));
 

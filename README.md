@@ -2,13 +2,11 @@
 
 Drop in replacement for default PHP PDOStatement class allowing devs to view an interpolated version of a parameterized query. The result is generally suitable for logging activities, debugging and performance analysis.
 
-####Update (2015-10-24)
+#####Update (2015-10-24)
 Full PHPUnit Test Suite in place plus re-organization of code
 
-####Update (2015-07-19)
+#####Update (2015-07-19)
 Now takes into account bound arguments' datatypes when compiling interpolated string (previously, all values were quoted when it's likely inappropriate to quote INT datatypes). This allows for viewing/using bound values in e.g. LIMIT clauses where the quotes would interfere with processing the resultant query.
-
-Also, modified namespacing and file structure to allow default composer autoloader to work correctly.
 
 ##Usage
 
@@ -107,17 +105,16 @@ $fullQuery  = $stmt->interpolateQuery($params);
 ```
 
 ##Installation
-Download the file...put it into a suitable location in your application directory (seriously, it's only one file; 2 if you count the license (Apache) which we all have a copy of lying around somewhere; 3 if you count this).
-### Update
-BONUS FILE NOW INCLUDED - composer.json (because, obviously, composer is a good thing to use).
 
-Add to your composer.json to have it loaded when you create your project:
+Preferred method: install using composer:
 
 ```json
 "require" : {
 	"noahheck/e_pdostatement" : "2.*"
 }
 ```
+
+Alternatively, you can simply download the project, put it into a suitable location in your application directory and include into your project as needed.
 
 ##Configuration
 
@@ -126,11 +123,13 @@ The EPDOStatement class extends the native \PDOStatement object, so the PDO obje
 ```php
 <?php
 
-require_once "EPDOStatement.php";
-
--- OR --
-
 require_once "path/to/vendor/autoload.php";
+
+/**
+ * -- OR --
+ *
+ * require_once "EPDOStatement.php";
+ */
 
 $dsn        = "mysql:host=localhost;dbname=myDatabase";
 $pdo        = new PDO($dsn, $dbUsername, $dbPassword);

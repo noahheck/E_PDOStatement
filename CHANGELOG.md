@@ -10,3 +10,20 @@
 
 - Remove duplication of code for input and bound parameters
 - Identified and fixed documentation errors
+
+###2.1.3 (2015-10-24)
+
+####Added
+
+- Full PHPUnit Test Suite
+- Reorganize code to more suitable project structure
+
+###2.1.2 (2015-07-19)
+
+####Added
+
+- Nothing
+
+####Fixed
+
+- Now takes into account bound arguments' datatypes when compiling interpolated string (previously, all values were quoted when it's likely inappropriate to quote INT datatypes). This allows for viewing/using bound values in e.g. LIMIT clauses where the quotes would interfere with processing the resultant query.

@@ -1,6 +1,6 @@
 ##Test Suite
 
-The E_PDOStatement project ships with a 100% coverage PHPUnit test suite. In addition to the test case, the following commponents are included:
+The E_PDOStatement project ships with a 100% coverage PHPUnit test suite. In addition to the test case, the following components are included:
 
 - `run_tests` shell script to execute the tests (see below)
 - `phpunit.xml` configuration file

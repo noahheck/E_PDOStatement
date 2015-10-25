@@ -130,7 +130,7 @@ require_once "EPDOStatement.php";
 
 -- OR --
 
-require_once "path/to/composer/autoload.php";
+require_once "path/to/vendor/autoload.php";
 
 $dsn        = "mysql:host=localhost;dbname=myDatabase";
 $pdo        = new PDO($dsn, $dbUsername, $dbPassword);
@@ -149,7 +149,7 @@ There are a lot of forum posts related to or requesting this type of functionali
 
 Bugs, new feature requests and pull requests are of course welcome as well. This was created to help our pro team solve an issue, so it was designed around our specific work flow. If it doesn't work for you though, let me know and I'll be happy to explore if I can help you out.
 
-###Update
+####E_mysqli
 
 E_PDOStatement now has a sister project aimed at providing the same functionality for php devs using the `mysqli` extension:
 

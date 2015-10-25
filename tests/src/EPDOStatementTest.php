@@ -243,4 +243,15 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue(false == preg_match("/\:userId/", $result));
 		$this->assertTrue(false == preg_match("/\:user_status/", $result));
 	}
+
+	public function testQueryIsNotChangedIfNoParametersUsedInQuery()
+	{
+		$pdo = $this->getPdo();
+
+		$query = "SELECT * FROM test_table WHERE id = '123' AND userId = '456'";
+
+		$stmt = $pdo->prepare($query);
+
+		$this->assertEquals($query, $stmt->interpolateQuery());
+	}
 }

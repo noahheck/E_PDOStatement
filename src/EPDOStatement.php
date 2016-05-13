@@ -134,7 +134,7 @@ class EPDOStatement extends PDOStatement
         if (is_numeric($marker)) {
             $marker = "\?";
         } else {
-            $marker = (preg_match("/^\:/", $marker)) ? $marker : ":" . $marker;
+            $marker = (preg_match("/^:/", $marker)) ? $marker : ":" . $marker;
         }
 
         $testParam = "/" . $marker . "(?!\w)/";
@@ -169,16 +169,15 @@ class EPDOStatement extends PDOStatement
      */
     private function prepareValue($value)
     {
-        if ($this->_pdo) {
-
-            if (PDO::PARAM_INT === $value['datatype'])
-            {
-                return (int) $value['value'];
-            }
-
-            return  $this->_pdo->quote($value['value']);
+        if (!$this->_pdo) {
+            return "'" . addslashes($value['value']) . "'";
         }
 
-        return "'" . addslashes($value['value']) . "'";
+        if (PDO::PARAM_INT === $value['datatype'])
+        {
+            return (int) $value['value'];
+        }
+
+        return  $this->_pdo->quote($value['value']);
     }
 }

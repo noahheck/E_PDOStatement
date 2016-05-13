@@ -64,8 +64,8 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue(false != preg_match("/123/", $result));
 		$this->assertTrue(false != preg_match("/active/", $result));
 
-		$this->assertTrue(false == preg_match("/\:userId/", $result));
-		$this->assertTrue(false == preg_match("/\:user_status/", $result));
+		$this->assertTrue(false == preg_match("/:userId/", $result));
+		$this->assertTrue(false == preg_match("/:user_status/", $result));
 	}
 
 	public function testValuesGetInterpolatedIntoQueryStatementWhenBoundIndividuallyAsNamedParametersWithoutLeadingColons()
@@ -89,8 +89,8 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue(false != preg_match("/123/", $result));
 		$this->assertTrue(false != preg_match("/active/", $result));
 
-		$this->assertTrue(false == preg_match("/\:userId/", $result));
-		$this->assertTrue(false == preg_match("/\:user_status/", $result));
+		$this->assertTrue(false == preg_match("/:userId/", $result));
+		$this->assertTrue(false == preg_match("/:user_status/", $result));
 	}
 
 	public function testValuesGetInterpolatedIntoQueryStatementWhenBoundIndividuallyAsUnnamedParameters()
@@ -140,8 +140,8 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue(false != preg_match("/123/", $result));
 		$this->assertTrue(false != preg_match("/active/", $result));
 
-		$this->assertTrue(false == preg_match("/\:userId/", $result));
-		$this->assertTrue(false == preg_match("/\:user_status/", $result));
+		$this->assertTrue(false == preg_match("/:userId/", $result));
+		$this->assertTrue(false == preg_match("/:user_status/", $result));
 	}
 
 	public function testValuesGetInterpolatedIntoQueryWhenProvidedAsUnnamedInputParameters()
@@ -194,25 +194,48 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue(false != preg_match("/123/", $result));
 		$this->assertTrue(false != preg_match("/log content/", $result));
 
-		$this->assertTrue(false == preg_match("/\:logContent/", $result));
-		$this->assertTrue(false == preg_match("/\:log/", $result));
+		$this->assertTrue(false == preg_match("/:logContent/", $result));
+		$this->assertTrue(false == preg_match("/:log/", $result));
 	}
 
 	public function testInterpolationAllowsSuccessfulExecutionOfQueries()
 	{
 		$pdo = $this->getPdo();
 
-		$query = "SELECT ? + ? + ?";
+		$query = "SELECT ? + ? + ?, ?";
 
 		$stmt = $pdo->prepare($query);
 
-		$values = array(1, 1, 1);
+		$values = array(1, 1, 1, "test string");
 
 		$stmt->execute($values);
 
-		list($sum) = $stmt->fetch();
+		list($sum, $testString) = $stmt->fetch();
 
 		$this->assertEquals(3, $sum);
+		$this->assertEquals("test string", $testString);
+	}
+
+	public function tetstInterpolationAllowsSuccessfulExecutionOfQueriesWithNamedPlaceholders()
+	{
+		$num = 3;
+		$string = "someString";
+
+		$pdo = $this->getPdo();
+
+		$query = "SELECT :num, :string";
+
+		$stmt = $pdo->prepare($query);
+
+		$stmt->bindParam(":num", $num, PDO::PARAM_INT);
+		$stmt->bindParam(":string", $string, PDO::PARAM_STR);
+
+		$stmt->execute();
+
+		list($sum, $testString) = $stmt->fetch();
+
+		$this->assertEquals(3, $sum);
+		$this->assertEquals("test string", $testString);
 	}
 
 	public function testValuesAreSuccessfullyInterpolatedIfNoPdoProvidedToEPDOStatement()
@@ -240,8 +263,8 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue(false != preg_match("/123/", $result));
 		$this->assertTrue(false != preg_match("/active/", $result));
 
-		$this->assertTrue(false == preg_match("/\:userId/", $result));
-		$this->assertTrue(false == preg_match("/\:user_status/", $result));
+		$this->assertTrue(false == preg_match("/:userId/", $result));
+		$this->assertTrue(false == preg_match("/:user_status/", $result));
 	}
 
 	public function testQueryIsNotChangedIfNoParametersUsedInQuery()

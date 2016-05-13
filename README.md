@@ -1,12 +1,10 @@
 #E_PDOStatement
 
-Drop in replacement for default PHP PDOStatement class allowing devs to view an interpolated version of a parameterized query. The result is generally suitable for logging activities, debugging and performance analysis.
+Extension to the default PHP PDOStatement class providing the ability to generate a version of a parameterized query with the parameters injected into the query string.
 
-#####Update (2015-10-24)
-Full PHPUnit Test Suite in place plus re-organization of code
+The result is generally suitable for logging activities, debugging and performance analysis.
 
-#####Update (2015-07-19)
-Now takes into account bound arguments' datatypes when compiling interpolated string (previously, all values were quoted when it's likely inappropriate to quote INT datatypes). This allows for viewing/using bound values in e.g. LIMIT clauses where the quotes would interfere with processing the resultant query.
+View the [changelog](CHANGELOG.md)
 
 ##Usage
 
@@ -18,14 +16,16 @@ The E_PDOStatement (<strong>E</strong>nhanced PDOStatement) project was designed
 
 ```php
 <?php
-$query      = "INSERT INTO users SET username = :user, password = :password";
+$content    = $_POST['content'];
+$title      = $_POST['title'];
+$date       = date("Y-m-d");
+
+$query      = "INSERT INTO posts SET content = :content, title = :title, date = :date"
 $stmt       = $pdo->prepare($query);
 
-$username   = $_POST['username'];
-$password   = passwordPrep($_POST['password']);
-
-$stmt->bindParam(":user"    , $username, PDO::PARAM_STR);
-$stmt->bindParam(":password", $password, PDO::PARAM_STR);
+$stmt->bindParam(":content", $content, PDO::PARAM_STR);
+$stmt->bindParam(":title"  , $title  , PDO::PARAM_STR);
+$stmt->bindParam(":date"   , $date   , PDO::PARAM_STR);
 
 $stmt->execute();
 
@@ -36,29 +36,30 @@ echo $stmt->fullQuery;
 The result of this will be (on a MySQL database):
 
 ```
-INSERT INTO users SET username = 'admin', password = '45ab6941fed66456afe6239ab875e4fa'
+INSERT INTO posts SET content = 'There are several reasons you shouldn\'t do that, including [...]', title = 'Why You Shouldn\'t Do That', date = '2016-05-13'
 ```
 
 When correctly configured, the interpolated values are escaped appropriately for the database driver, allowing the generated string to be suitable for e.g. log files, backups, etc.
 
 E_PDOStatement supports pre-execution binding to both named and ? style parameter markers:
 ```php
-$query      = "INSERT INTO users SET username = ?, password = ?";
+$query      = "INSERT INTO posts SET content = ?, title = ?, date = ?";
 
 ...
 
-$stmt->bindParam(1, $username, PDO::PARAM_STR);
-$stmt->bindParam(2, $password, PDO::PARAM_STR);
+$stmt->bindParam(1, $content, PDO::PARAM_STR);
+$stmt->bindParam(2, $title  , PDO::PARAM_STR);
+$stmt->bindParam(3, $date   , PDO::PARAM_STR);
 ```
 
 as well as un-named parameters provided as input arguments to the `$stmt->execute()` method:
 
 ```php
-$query      = "INSERT INTO users SET username = ?, password = ?";
+$query      = "INSERT INTO posts SET content = ?, title = ?, date = ?";
 
 ...
 
-$params     = array($username, $password);
+$params     = array($content, $title, $date);
 
 $stmt->execute($params);
 
@@ -66,13 +67,14 @@ $stmt->execute($params);
 
 Named $key => $value pairs can also be provided as input arguments to the `$stmt->execute()` method:
 ```php
-$query      = "INSERT INTO users SET username = :username, password = :password";
+$query      = "INSERT INTO posts SET content = :content, title = :title, date = :date";
 
 ...
 
 $params     = array(
-      ":username" => $username
-    , ":password" => $password
+      ":content" => $content
+    , ":title"   => $title
+    , ":date"    => $date
 );
 
 $stmt->execute($params);
@@ -80,26 +82,33 @@ $stmt->execute($params);
 
 You can also generate the full query string without executing the query:
 ```php
-$query      = "INSERT INTO users SET username = :user, password = :password";
+$content    = $_POST['content'];
+$title      = $_POST['title'];
+$date       = date("Y-m-d");
+
+$query      = "INSERT INTO posts SET content = :content, title = :title, date = :date"
 $stmt       = $pdo->prepare($query);
 
-$username   = $_POST['username'];
-$password   = passwordPrep($_POST['password']);
-
-$stmt->bindParam(":user"    , $username, PDO::PARAM_STR);
-$stmt->bindParam(":password", $password, PDO::PARAM_STR);
+$stmt->bindParam(":content", $content, PDO::PARAM_STR);
+$stmt->bindParam(":title"  , $title  , PDO::PARAM_STR);
+$stmt->bindParam(":date"   , $date   , PDO::PARAM_STR);
 
 $fullQuery  = $stmt->interpolateQuery();
 ```
 or
 ```php
-$query      = "INSERT INTO users SET username = :user, password = :password";
+$content    = $_POST['content'];
+$title      = $_POST['title'];
+$date       = date("Y-m-d");
+
+$query      = "INSERT INTO posts SET content = ?, title = ?, date = ?"
 $stmt       = $pdo->prepare($query);
 
-$username   = $_POST['username'];
-$password   = passwordPrep($_POST['password']);
-
-$params     = array($username, $password);
+$params     = array(
+      $content
+    , $title
+    , $date
+);
 
 $fullQuery  = $stmt->interpolateQuery($params);
 ```
@@ -139,9 +148,8 @@ $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("EPDOStatement\EPDOStatement
 
 That's all there is to it.
 
-The classname has been updated to allow strict conformance to PSR-0 autoloading (e.g. removed the _ from the class/filename).
-
-Ideally, your project would have a PDO abstraction/wrapper class allowing you to implement this modification in only one place. If you don't have this luxury, success was shown with extending the \PDO class to set the ATTR_STATEMENT_CLASS attribute in the constructor of the PDO.
+Ideally, your project would have a PDO abstraction/wrapper class allowing you to implement this modification in only one place.
+If you don't have this luxury, success was shown with extending the \PDO class to set the ATTR_STATEMENT_CLASS attribute in the constructor of the PDO.
 
 ##Get in Touch
 There are a lot of forum posts related to or requesting this type of functionality, so hopefully someone somewhere will find it helpful. If it helps you, comments are of course appreciated.

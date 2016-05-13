@@ -1,5 +1,16 @@
 ##Change Log
 
+###2.1.5 (2015-05-13)
+
+####Added
+
+- Test for successful execution of database query with named placeholders
+- Updated README
+
+####Fixed
+
+- Remove un-needed escape sequences in regular expression patterns
+
 ###2.1.4 (2015-10-25)
 
 ####Added

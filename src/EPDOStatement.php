@@ -169,6 +169,11 @@ class EPDOStatement extends PDOStatement
      */
     private function prepareValue($value)
     {
+        if ($value['value'] === NULL)
+        {
+            return 'NULL';
+        }
+        
         if (!$this->_pdo) {
             return "'" . addslashes($value['value']) . "'";
         }

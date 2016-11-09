@@ -137,7 +137,7 @@ class EPDOStatement extends PDOStatement
             $marker = (preg_match("/^:/", $marker)) ? $marker : ":" . $marker;
         }
 
-        $testParam = "/" . $marker . "(?!\w)/";
+        $testParam = "/({$marker}(?!\w))(?=(?:[^\"']|[\"'][^\"']*[\"'])*$)/";
 
         return preg_replace($testParam, $replValue, $queryString, 1);
     }
@@ -169,11 +169,10 @@ class EPDOStatement extends PDOStatement
      */
     private function prepareValue($value)
     {
-        if ($value['value'] === NULL)
-        {
+        if ($value['value'] === NULL) {
             return 'NULL';
         }
-        
+
         if (!$this->_pdo) {
             return "'" . addslashes($value['value']) . "'";
         }

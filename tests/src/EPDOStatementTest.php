@@ -170,6 +170,44 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue(false == preg_match("/\?/", $result));
 	}
 
+	public function testValuesGetInterpolatedIntoQueryEvenWhenReplacementValueContainsAPlaceholderUsingUnnamedParameters()
+	{
+		$pdo = $this->getPdo();
+
+		$query = "UPDATE logs SET logContent = ?, summary = ?";
+		$stmt = $pdo->prepare($query);
+
+		$parameters = array(
+			  "String contains a ?"
+			, "Some other value"
+		);
+
+		$result = $stmt->interpolateQuery($parameters);
+
+		$expected = "UPDATE logs SET logContent = 'String contains a ?', summary = 'Some other value'";
+
+		$this->assertEquals($expected, $result);
+	}
+
+	public function testValuesGetInterpolatedIntoQueryEvenWhenReplacementValueContainsAPlaceholderUsingNamedParameters()
+	{
+		$pdo = $this->getPdo();
+
+		$query = "UPDATE logs SET logContent = :logContent, summary = :summary";
+		$stmt = $pdo->prepare($query);
+
+		$parameters = array(
+			  ":logContent" => "String contains :summary"
+			, ":summary"    => "Some other value"
+		);
+
+		$result = $stmt->interpolateQuery($parameters);
+
+		$expected = "UPDATE logs SET logContent = 'String contains :summary', summary = 'Some other value'";
+
+		$this->assertEquals($expected, $result);
+	}
+
 	public function testValuesGetInterpolatedCorrectlyWhenSimilarlyNamedPlaceholdersAreUsed()
 	{
 		$pdo = $this->getPdo();
@@ -196,6 +234,26 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 
 		$this->assertTrue(false == preg_match("/:logContent/", $result));
 		$this->assertTrue(false == preg_match("/:log/", $result));
+	}
+
+	public function testNullValuesAreInterpolatedCorrectlyAsDbNullValues()
+	{
+		$pdo = $this->getPdo();
+
+		$query = "UPDATE logs SET logContent = :logContent WHERE log = :log";
+		$stmt = $pdo->prepare($query);
+
+		$logContent = null;
+		$log = 123;
+
+		$stmt->bindParam(":logContent", $logContent, PDO::PARAM_STR);
+		$stmt->bindParam(":log"       , $log       , PDO::PARAM_INT);
+
+		$expected = "UPDATE logs SET logContent = NULL WHERE log = 123";
+
+		$result = $stmt->interpolateQuery();
+
+		$this->assertEquals($expected, $result);
 	}
 
 	public function testInterpolationAllowsSuccessfulExecutionOfQueries()

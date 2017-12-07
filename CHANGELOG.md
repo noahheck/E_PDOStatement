@@ -1,5 +1,9 @@
 ## Change Log
 
+#### Fixed (2017-12-07)
+
+- Fix headers in changelog
+
 ### 2.2.0 (2016-11-08)
 
 #### Added
@@ -20,7 +24,7 @@
 
 ### 2.1.4 (2015-10-25)
 
-####Added
+#### Added
 
 - Nothing
 
@@ -31,17 +35,17 @@
 
 ### 2.1.3 (2015-10-24)
 
-####Added
+#### Added
 
 - Full PHPUnit Test Suite
 - Reorganize code to more suitable project structure
 
 ### 2.1.2 (2015-07-19)
 
-####Added
+#### Added
 
 - Nothing
 
-####Fixed
+#### Fixed
 
 - Now takes into account bound arguments' datatypes when compiling interpolated string (previously, all values were quoted when it's likely inappropriate to quote INT datatypes). This allows for viewing/using bound values in e.g. LIMIT clauses where the quotes would interfere with processing the resultant query.

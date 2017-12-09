@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2015 github.com/noahheck
+ * Copyright 2017 github.com/noahheck
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ class EPDOStatement extends PDOStatement
     protected $_pdo = "";
 
     /**
-     * @var str $fullQuery - will be populated with the interpolated db query string
+     * @var string $fullQuery - will be populated with the interpolated db query string
      */
     public $fullQuery;
 
@@ -53,8 +53,8 @@ class EPDOStatement extends PDOStatement
     /**
      * Overrides the default \PDOStatement method to add the named parameter and it's reference to the array of bound
      * parameters - then accesses and returns parent::bindParam method
-     * @param str $param
-     * @param var $value
+     * @param string $param
+     * @param mixed $value
      * @param int $datatype
      * @param int $length
      * @param mixed $driverOptions
@@ -73,8 +73,8 @@ class EPDOStatement extends PDOStatement
     /**
      * Overrides the default \PDOStatement method to add the named parameter and it's value to the array of bound values
      * - then accesses and returns parent::bindValue method
-     * @param str $param
-     * @param str $value
+     * @param string $param
+     * @param mixed $value
      * @param int $datatype
      * @return bool - default of \PDOStatement::bindValue()
      */
@@ -92,7 +92,7 @@ class EPDOStatement extends PDOStatement
      * Copies $this->queryString then replaces bound markers with associated values ($this->queryString is not modified
      * but the resulting query string is assigned to $this->fullQuery)
      * @param array $inputParams - array of values to replace ? marked parameters in the query string
-     * @return str $testQuery - interpolated db query string
+     * @return string $testQuery - interpolated db query string
      */
     public function interpolateQuery($inputParams = null)
     {
@@ -164,8 +164,10 @@ class EPDOStatement extends PDOStatement
      *      PDO object that can perform the necessary translations and can be updated with your e.g. package management,
      *      etc.
      *
-     * @param str $value - the value to be prepared for injection as a value in the query string
-     * @return str $value - prepared $value
+     * @param array $value - an array representing the value to be prepared for injection as a value in the query string
+     *                       with it's associated datatype:
+     *                       ['datatype' => PDO::PARAM_STR, 'value' => 'something']
+     * @return string $value - prepared $value
      */
     private function prepareValue($value)
     {

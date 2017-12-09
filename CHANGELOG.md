@@ -1,5 +1,10 @@
 ## Change Log
 
+#### Fixed (2017-12-09)
+
+- Update copyright date
+- Fixed comments (per PhpStorm)
+
 #### Fixed (2017-12-07)
 
 - Fix headers in changelog

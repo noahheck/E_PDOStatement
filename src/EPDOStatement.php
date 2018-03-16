@@ -19,9 +19,33 @@ namespace EPDOStatement;
 
 use \PDO as PDO;
 use \PDOStatement as PDOStatement;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 
-class EPDOStatement extends PDOStatement
+class EPDOStatement extends PDOStatement implements LoggerAwareInterface
 {
+    const WARNING_USING_ADDSLASHES = "addslashes is not suitable for production logging, etc. Please consider updating your processes to provide a valid PDO object that can perform the necessary translations and can be updated with your e.g. package management, etc.";
+
+    /**
+     * @var \PDO $_pdo
+     */
+    protected $_pdo = "";
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var string $fullQuery - will be populated with the interpolated db query string
+     */
+    public $fullQuery;
+
+    /**
+     * @var array $boundParams - array of arrays containing values that have been bound to the query as parameters
+     */
+    protected $boundParams = array();
+
     /**
      * The first argument passed in should be an instance of the PDO object. If so, we'll cache it's reference locally
      * to allow for the best escaping possible later when interpolating our query. Other parameters can be added if
@@ -36,19 +60,12 @@ class EPDOStatement extends PDOStatement
     }
 
     /**
-     * @var \PDO $_pdo
+     * @inheritdoc
      */
-    protected $_pdo = "";
-
-    /**
-     * @var string $fullQuery - will be populated with the interpolated db query string
-     */
-    public $fullQuery;
-
-    /**
-     * @var array $boundParams - array of arrays containing values that have been bound to the query as parameters
-     */
-    protected $boundParams = array();
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
 
     /**
      * Overrides the default \PDOStatement method to add the named parameter and it's reference to the array of bound
@@ -62,6 +79,16 @@ class EPDOStatement extends PDOStatement
      */
     public function bindParam($param, &$value, $datatype = PDO::PARAM_STR, $length = 0, $driverOptions = false)
     {
+        if ($this->logger) {
+            $this->logger->debug(
+                "Binding parameter {param} (as parameter) as datatype {datatype}: current value {value}",
+                array(
+                    "param"    => $param,
+                    "datatype" => $datatype,
+                    "value"    => $value,
+                ));
+        }
+
         $this->boundParams[$param] = array(
               "value"       => &$value
             , "datatype"    => $datatype
@@ -80,6 +107,16 @@ class EPDOStatement extends PDOStatement
      */
     public function bindValue($param, $value, $datatype = PDO::PARAM_STR)
     {
+        if ($this->logger) {
+            $this->logger->debug(
+                "Binding parameter {param} (as value) as datatype {datatype}: value {value}",
+                array(
+                    "param"    => $param,
+                    "datatype" => $datatype,
+                    "value"    => $value,
+                ));
+        }
+
         $this->boundParams[$param] = array(
               "value"       => $value
             , "datatype"    => $datatype
@@ -96,6 +133,10 @@ class EPDOStatement extends PDOStatement
      */
     public function interpolateQuery($inputParams = null)
     {
+        if ($this->logger) {
+            $this->logger->debug("Interpolating query...");
+        }
+
         $testQuery = $this->queryString;
 
         $params = ($this->boundParams) ? $this->boundParams : $inputParams;
@@ -121,7 +162,41 @@ class EPDOStatement extends PDOStatement
 
         $this->fullQuery = $testQuery;
 
+        if ($this->logger) {
+            $this->logger->debug("Query interpolation complete");
+            $this->logger->debug("Interpolated query: {query}", array("query" => $testQuery));
+        }
+
         return $testQuery;
+    }
+
+    /**
+     * Overrides the default \PDOStatement method to generate the full query string - then accesses and returns
+     * parent::execute method
+     * @param array $inputParams
+     * @return bool - default of \PDOStatement::execute()
+     */
+    public function execute($inputParams = null)
+    {
+        $this->interpolateQuery($inputParams);
+
+        try {
+            $response = parent::execute($inputParams);
+
+            if ($this->logger) {
+                $this->logger->info("Query executed: {query}", array("query" => $this->fullQuery));
+            }
+        } catch (\Exception $e) {
+            if ($this->logger) {
+                $this->logger->error("Exception thrown executing query: {query}", array("query" => $this->fullQuery));
+                $this->logger->error($e->getMessage(), array("exception" => $e));
+            }
+
+            throw $e;
+        }
+
+        return $response;
+//        return parent::execute($inputParams);
     }
 
     private function replaceMarker($queryString, $marker, $replValue)
@@ -139,20 +214,16 @@ class EPDOStatement extends PDOStatement
 
         $testParam = "/({$marker}(?!\w))(?=(?:[^\"']|[\"'][^\"']*[\"'])*$)/";
 
+        if ($this->logger) {
+            $this->logger->debug(
+                "Replacing marker {marker} with value {value}",
+                array(
+                    "marker" => $marker,
+                    "value"  => $replValue,
+                ));
+        }
+
         return preg_replace($testParam, $replValue, $queryString, 1);
-    }
-
-    /**
-     * Overrides the default \PDOStatement method to generate the full query string - then accesses and returns
-     * parent::execute method
-     * @param array $inputParams
-     * @return bool - default of \PDOStatement::execute()
-     */
-    public function execute($inputParams = null)
-    {
-        $this->interpolateQuery($inputParams);
-
-        return parent::execute($inputParams);
     }
 
     /**
@@ -172,16 +243,32 @@ class EPDOStatement extends PDOStatement
     private function prepareValue($value)
     {
         if ($value['value'] === NULL) {
+            if ($this->logger) {
+                $this->logger->debug("Value is null: returning 'NULL'");
+            }
+
             return 'NULL';
         }
 
         if (!$this->_pdo) {
+            if ($this->logger) {
+                $this->logger->debug("Preparing value {value} using addslashes", array("value" => $value));
+                $this->logger->warning(self::WARNING_USING_ADDSLASHES);
+            }
+
             return "'" . addslashes($value['value']) . "'";
         }
 
-        if (PDO::PARAM_INT === $value['datatype'])
-        {
+        if (PDO::PARAM_INT === $value['datatype']) {
+            if ($this->logger) {
+                $this->logger->debug("Preparing value {value} as integer", array("value" => $value));
+            }
+
             return (int) $value['value'];
+        }
+
+        if ($this->logger) {
+            $this->logger->debug("Preparing value {value} as string", array("value" => $value));
         }
 
         return  $this->_pdo->quote($value['value']);

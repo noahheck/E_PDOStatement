@@ -15,324 +15,403 @@
  * limitations under the License.
  */
 
+class Logger extends \Psr\Log\AbstractLogger
+{
+    public $debug;
+
+    public $warning;
+
+    public $info;
+
+    public $error;
+
+    public function log($level, $message, array $context = array())
+    {
+        $this->$level[] = array($message => $context);
+    }
+}
+
 class EPDOStatementTest extends PHPUnit_Framework_TestCase
 {
-	/**
-	 * PDO object
-	 */
-	protected $pdo = false;
+    /**
+     * PDO object
+     */
+    protected $pdo = false;
 
-	protected function getConfig()
-	{
-		return include dirname(__FILE__) . "/../config/config.php";
-	}
+    /**
+     * Logger
+     */
+    protected $logger = false;
 
-	protected function getPdo()
-	{
-		if ($this->pdo)
-		{
-			return $this->pdo;
-		}
+    protected function getConfig()
+    {
+        return include dirname(__FILE__) . "/../config/config.php";
+    }
 
-		$config = $this->getConfig();
+    protected function getPdo()
+    {
+        if ($this->pdo)
+        {
+            return $this->pdo;
+        }
 
-		$this->pdo = new PDO($config['db']['dsn'], $config['db']['username'], $config['db']['password']);
+        $this->logger = new Logger;
 
-		$this->pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("EPDOStatement\EPDOStatement", array($this->pdo)));
+        $config = $this->getConfig();
 
-		return $this->pdo;
-	}
+        $this->pdo = new PDO($config['db']['dsn'], $config['db']['username'], $config['db']['password']);
 
-	public function testValuesGetInterpolatedIntoQueryStatementWhenBoundIndividuallyAsNamedParameters()
-	{
-		$pdo = $this->getPdo();
+        $this->pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("EPDOStatement\EPDOStatement", array($this->pdo)));
 
-		/**
-		 * Generic type query with mix of camel-case and _ separated placeholders
-		 */
-		$query = "SELECT * FROM users WHERE user_id = :userId AND status = :user_status";
-		$stmt = $pdo->prepare($query);
+        return $this->pdo;
+    }
 
-		$userId 		= 123;
-		$user_status 	= "active";
+    public function testValuesGetInterpolatedIntoQueryStatementWhenBoundIndividuallyAsNamedParameters()
+    {
+        $pdo = $this->getPdo();
 
-		$stmt->bindParam(":userId" 		, $userId 		, PDO::PARAM_INT);
-		$stmt->bindParam(":user_status" , $user_status 	, PDO::PARAM_STR);
+        /**
+         * Generic type query with mix of camel-case and _ separated placeholders
+         */
+        $query = "SELECT * FROM users WHERE user_id = :userId AND status = :user_status";
+        $stmt = $pdo->prepare($query);
+        $stmt->setLogger($this->logger);
 
-		$result = $stmt->interpolateQuery();
+        $userId      = 123;
+        $user_status = "active";
 
-		$this->assertTrue(false != preg_match("/123/", $result));
-		$this->assertTrue(false != preg_match("/active/", $result));
+        $stmt->bindParam(":userId"     , $userId     , PDO::PARAM_INT);
+        $stmt->bindParam(":user_status", $user_status, PDO::PARAM_STR);
 
-		$this->assertTrue(false == preg_match("/:userId/", $result));
-		$this->assertTrue(false == preg_match("/:user_status/", $result));
-	}
+        $result = $stmt->interpolateQuery();
 
-	public function testValuesGetInterpolatedIntoQueryStatementWhenBoundIndividuallyAsNamedParametersWithoutLeadingColons()
-	{
-		$pdo = $this->getPdo();
+        $this->assertTrue(false != preg_match("/123/", $result));
+        $this->assertTrue(false != preg_match("/active/", $result));
 
-		/**
-		 * Generic type query with mix of camel-case and _ separated placeholders
-		 */
-		$query = "SELECT * FROM users WHERE user_id = :userId AND status = :user_status";
-		$stmt = $pdo->prepare($query);
+        $this->assertTrue(false == preg_match("/:userId/", $result));
+        $this->assertTrue(false == preg_match("/:user_status/", $result));
+    }
 
-		$userId 		= 123;
-		$user_status 	= "active";
+    public function testValuesGetInterpolatedIntoQueryStatementWhenBoundIndividuallyAsNamedParametersWithoutLeadingColons()
+    {
+        $pdo = $this->getPdo();
 
-		$stmt->bindParam("userId" 		, $userId 		, PDO::PARAM_INT);
-		$stmt->bindParam("user_status" , $user_status 	, PDO::PARAM_STR);
+        /**
+         * Generic type query with mix of camel-case and _ separated placeholders
+         */
+        $query = "SELECT * FROM users WHERE user_id = :userId AND status = :user_status";
+        $stmt = $pdo->prepare($query);
 
-		$result = $stmt->interpolateQuery();
+        $userId      = 123;
+        $user_status = "active";
 
-		$this->assertTrue(false != preg_match("/123/", $result));
-		$this->assertTrue(false != preg_match("/active/", $result));
+        $stmt->bindParam("userId"     , $userId     , PDO::PARAM_INT);
+        $stmt->bindParam("user_status", $user_status, PDO::PARAM_STR);
 
-		$this->assertTrue(false == preg_match("/:userId/", $result));
-		$this->assertTrue(false == preg_match("/:user_status/", $result));
-	}
+        $result = $stmt->interpolateQuery();
 
-	public function testValuesGetInterpolatedIntoQueryStatementWhenBoundIndividuallyAsUnnamedParameters()
-	{
-		$pdo = $this->getPdo();
+        $this->assertTrue(false != preg_match("/123/", $result));
+        $this->assertTrue(false != preg_match("/active/", $result));
 
-		/**
-		 * Generic type query with mix of camel-case and _ separated placeholders
-		 */
-		$query = "SELECT * FROM users WHERE user_id = ? AND status = ?";
-		$stmt = $pdo->prepare($query);
+        $this->assertTrue(false == preg_match("/:userId/", $result));
+        $this->assertTrue(false == preg_match("/:user_status/", $result));
+    }
 
-		$userId 		= 123;
-		$user_status 	= "active";
+    public function testValuesGetInterpolatedIntoQueryStatementWhenBoundIndividuallyAsUnnamedParameters()
+    {
+        $pdo = $this->getPdo();
 
-		$stmt->bindValue(1, $userId 		, PDO::PARAM_INT);
-		$stmt->bindValue(2, $user_status 	, PDO::PARAM_STR);
+        /**
+         * Generic type query with mix of camel-case and _ separated placeholders
+         */
+        $query = "SELECT * FROM users WHERE user_id = ? AND status = ?";
+        $stmt = $pdo->prepare($query);
 
-		$result = $stmt->interpolateQuery();
+        $userId      = 123;
+        $user_status = "active";
 
-		$this->assertTrue(false != preg_match("/123/", $result));
-		$this->assertTrue(false != preg_match("/active/", $result));
+        $stmt->bindValue(1, $userId     , PDO::PARAM_INT);
+        $stmt->bindValue(2, $user_status, PDO::PARAM_STR);
 
-		$this->assertTrue(false == preg_match("/\?/", $result));
-	}
+        $result = $stmt->interpolateQuery();
 
-	public function testValuesGetInterpolatedIntoQueryWhenProvidedAsNamedInputParameters()
-	{
-		$pdo = $this->getPdo();
+        $this->assertTrue(false != preg_match("/123/", $result));
+        $this->assertTrue(false != preg_match("/active/", $result));
 
-		/**
-		 * Generic type query with mix of camel-case and _ separated placeholders
-		 */
-		$query = "SELECT * FROM users WHERE user_id = :userId AND status = :user_status";
-		$stmt = $pdo->prepare($query);
+        $this->assertTrue(false == preg_match("/\?/", $result));
+    }
 
-		$userId 		= 123;
-		$user_status 	= "active";
+    public function testValuesGetInterpolatedIntoQueryWhenProvidedAsNamedInputParameters()
+    {
+        $pdo = $this->getPdo();
 
-		$parameters = array(
-			  ":userId" 		=> $userId
-			, ":user_status" 	=> $user_status
-		);
+        /**
+         * Generic type query with mix of camel-case and _ separated placeholders
+         */
+        $query = "SELECT * FROM users WHERE user_id = :userId AND status = :user_status";
+        $stmt = $pdo->prepare($query);
 
-		$result = $stmt->interpolateQuery($parameters);
+        $userId      = 123;
+        $user_status = "active";
 
-		$this->assertTrue(false != preg_match("/123/", $result));
-		$this->assertTrue(false != preg_match("/active/", $result));
+        $parameters = array(
+              ":userId"      => $userId
+            , ":user_status" => $user_status
+        );
 
-		$this->assertTrue(false == preg_match("/:userId/", $result));
-		$this->assertTrue(false == preg_match("/:user_status/", $result));
-	}
+        $result = $stmt->interpolateQuery($parameters);
 
-	public function testValuesGetInterpolatedIntoQueryWhenProvidedAsUnnamedInputParameters()
-	{
-		$pdo = $this->getPdo();
+        $this->assertTrue(false != preg_match("/123/", $result));
+        $this->assertTrue(false != preg_match("/active/", $result));
 
-		/**
-		 * Generic type query with mix of camel-case and _ separated placeholders
-		 */
-		$query = "SELECT * FROM users WHERE user_id = ? AND status = ?";
-		$stmt = $pdo->prepare($query);
+        $this->assertTrue(false == preg_match("/:userId/", $result));
+        $this->assertTrue(false == preg_match("/:user_status/", $result));
+    }
 
-		$userId 		= 123;
-		$user_status 	= "active";
+    public function testValuesGetInterpolatedIntoQueryWhenProvidedAsUnnamedInputParameters()
+    {
+        $pdo = $this->getPdo();
 
-		$parameters = array(
-			  $userId
-			, $user_status
-		);
+        /**
+         * Generic type query with mix of camel-case and _ separated placeholders
+         */
+        $query = "SELECT * FROM users WHERE user_id = ? AND status = ?";
+        $stmt = $pdo->prepare($query);
 
-		$result = $stmt->interpolateQuery($parameters);
+        $userId      = 123;
+        $user_status = "active";
 
-		$this->assertTrue(false != preg_match("/123/", $result));
-		$this->assertTrue(false != preg_match("/active/", $result));
+        $parameters = array(
+              $userId
+            , $user_status
+        );
 
-		$this->assertTrue(false == preg_match("/\?/", $result));
-	}
+        $result = $stmt->interpolateQuery($parameters);
 
-	public function testValuesGetInterpolatedIntoQueryEvenWhenReplacementValueContainsAPlaceholderUsingUnnamedParameters()
-	{
-		$pdo = $this->getPdo();
+        $this->assertTrue(false != preg_match("/123/", $result));
+        $this->assertTrue(false != preg_match("/active/", $result));
 
-		$query = "UPDATE logs SET logContent = ?, summary = ?";
-		$stmt = $pdo->prepare($query);
+        $this->assertTrue(false == preg_match("/\?/", $result));
+    }
 
-		$parameters = array(
-			  "String contains a ?"
-			, "Some other value"
-		);
+    public function testValuesGetInterpolatedIntoQueryEvenWhenReplacementValueContainsAPlaceholderUsingUnnamedParameters()
+    {
+        $pdo = $this->getPdo();
 
-		$result = $stmt->interpolateQuery($parameters);
+        $query = "UPDATE logs SET logContent = ?, summary = ?";
+        $stmt = $pdo->prepare($query);
 
-		$expected = "UPDATE logs SET logContent = 'String contains a ?', summary = 'Some other value'";
+        $parameters = array(
+              "String contains a ?"
+            , "Some other value"
+        );
 
-		$this->assertEquals($expected, $result);
-	}
+        $result = $stmt->interpolateQuery($parameters);
 
-	public function testValuesGetInterpolatedIntoQueryEvenWhenReplacementValueContainsAPlaceholderUsingNamedParameters()
-	{
-		$pdo = $this->getPdo();
+        $expected = "UPDATE logs SET logContent = 'String contains a ?', summary = 'Some other value'";
 
-		$query = "UPDATE logs SET logContent = :logContent, summary = :summary";
-		$stmt = $pdo->prepare($query);
+        $this->assertEquals($expected, $result);
+    }
 
-		$parameters = array(
-			  ":logContent" => "String contains :summary"
-			, ":summary"    => "Some other value"
-		);
+    public function testValuesGetInterpolatedIntoQueryEvenWhenReplacementValueContainsAPlaceholderUsingNamedParameters()
+    {
+        $pdo = $this->getPdo();
 
-		$result = $stmt->interpolateQuery($parameters);
+        $query = "UPDATE logs SET logContent = :logContent, summary = :summary";
+        $stmt = $pdo->prepare($query);
 
-		$expected = "UPDATE logs SET logContent = 'String contains :summary', summary = 'Some other value'";
+        $parameters = array(
+              ":logContent" => "String contains :summary"
+            , ":summary"    => "Some other value"
+        );
 
-		$this->assertEquals($expected, $result);
-	}
+        $result = $stmt->interpolateQuery($parameters);
 
-	public function testValuesGetInterpolatedCorrectlyWhenSimilarlyNamedPlaceholdersAreUsed()
-	{
-		$pdo = $this->getPdo();
+        $expected = "UPDATE logs SET logContent = 'String contains :summary', summary = 'Some other value'";
 
-		/**
-		 * Specific query using similarly named placeholders
-		 */
-		$query = "UPDATE logs SET logContent = :logContent WHERE log = :log";
-		$stmt = $pdo->prepare($query);
+        $this->assertEquals($expected, $result);
+    }
 
-		/**
-		 * Bind parameters in order to throw off the interpolation
-		 */
-		$log = 123;
-		$logContent = "Test log content";
+    public function testValuesGetInterpolatedCorrectlyWhenSimilarlyNamedPlaceholdersAreUsed()
+    {
+        $pdo = $this->getPdo();
 
-		$stmt->bindParam(":log" 		, $log 			, PDO::PARAM_INT);
-		$stmt->bindParam(":logContent" 	, $logContent 	, PDO::PARAM_STR);
+        /**
+         * Specific query using similarly named placeholders
+         */
+        $query = "UPDATE logs SET logContent = :logContent WHERE log = :log";
+        $stmt = $pdo->prepare($query);
 
-		$result = $stmt->interpolateQuery();
+        /**
+         * Bind parameters in order to throw off the interpolation
+         */
+        $log = 123;
+        $logContent = "Test log content";
 
-		$this->assertTrue(false != preg_match("/123/", $result));
-		$this->assertTrue(false != preg_match("/log content/", $result));
+        $stmt->bindParam(":log"       , $log       , PDO::PARAM_INT);
+        $stmt->bindParam(":logContent", $logContent, PDO::PARAM_STR);
 
-		$this->assertTrue(false == preg_match("/:logContent/", $result));
-		$this->assertTrue(false == preg_match("/:log/", $result));
-	}
+        $result = $stmt->interpolateQuery();
 
-	public function testNullValuesAreInterpolatedCorrectlyAsDbNullValues()
-	{
-		$pdo = $this->getPdo();
+        $this->assertTrue(false != preg_match("/123/", $result));
+        $this->assertTrue(false != preg_match("/log content/", $result));
 
-		$query = "UPDATE logs SET logContent = :logContent WHERE log = :log";
-		$stmt = $pdo->prepare($query);
+        $this->assertTrue(false == preg_match("/:logContent/", $result));
+        $this->assertTrue(false == preg_match("/:log/", $result));
+    }
 
-		$logContent = null;
-		$log = 123;
+    public function testNullValuesAreInterpolatedCorrectlyAsDbNullValues()
+    {
+        $pdo = $this->getPdo();
 
-		$stmt->bindParam(":logContent", $logContent, PDO::PARAM_STR);
-		$stmt->bindParam(":log"       , $log       , PDO::PARAM_INT);
+        $query = "UPDATE logs SET logContent = :logContent WHERE log = :log";
+        $stmt = $pdo->prepare($query);
 
-		$expected = "UPDATE logs SET logContent = NULL WHERE log = 123";
+        $logContent = null;
+        $log = 123;
 
-		$result = $stmt->interpolateQuery();
+        $stmt->bindParam(":logContent", $logContent, PDO::PARAM_STR);
+        $stmt->bindParam(":log"       , $log       , PDO::PARAM_INT);
 
-		$this->assertEquals($expected, $result);
-	}
+        $expected = "UPDATE logs SET logContent = NULL WHERE log = 123";
 
-	public function testInterpolationAllowsSuccessfulExecutionOfQueries()
-	{
-		$pdo = $this->getPdo();
+        $result = $stmt->interpolateQuery();
 
-		$query = "SELECT ? + ? + ?, ?";
+        $this->assertEquals($expected, $result);
+    }
 
-		$stmt = $pdo->prepare($query);
+    public function testInterpolationAllowsSuccessfulExecutionOfQueriesAndLogsQueriesAsInfoIfLoggerProvided()
+    {
+        $pdo = $this->getPdo();
 
-		$values = array(1, 1, 1, "test string");
+        $query = "SELECT ? + ? + ?, ?";
 
-		$stmt->execute($values);
+        $stmt = $pdo->prepare($query);
+        $stmt->setLogger($this->logger);
 
-		list($sum, $testString) = $stmt->fetch();
+        $values = array(1, 1, 1, "test string");
 
-		$this->assertEquals(3, $sum);
-		$this->assertEquals("test string", $testString);
-	}
+        $stmt->execute($values);
 
-	public function tetstInterpolationAllowsSuccessfulExecutionOfQueriesWithNamedPlaceholders()
-	{
-		$num = 3;
-		$string = "someString";
+        list($sum, $testString) = $stmt->fetch();
 
-		$pdo = $this->getPdo();
+        $this->assertEquals(3, $sum);
+        $this->assertEquals("test string", $testString);
 
-		$query = "SELECT :num, :string";
+        $this->assertEquals("SELECT '1' + '1' + '1', 'test string'", array_keys($this->logger->info[0])[0]);
+    }
 
-		$stmt = $pdo->prepare($query);
+    public function testUnsuccessfulQueryExecutionLogsErrorsCorrectly()
+    {
+        $pdo = $this->getPdo();
 
-		$stmt->bindParam(":num", $num, PDO::PARAM_INT);
-		$stmt->bindParam(":string", $string, PDO::PARAM_STR);
+        $query = "SELECT something FROM non_existant_table";
 
-		$stmt->execute();
+        $stmt = $pdo->prepare($query);
 
-		list($sum, $testString) = $stmt->fetch();
+        $logger = new Logger;
 
-		$this->assertEquals(3, $sum);
-		$this->assertEquals("test string", $testString);
-	}
+        $stmt->setLogger($logger);
 
-	public function testValuesAreSuccessfullyInterpolatedIfNoPdoProvidedToEPDOStatement()
-	{
-		$config = $this->getConfig();
+        try {
+            $stmt->execute();
+        } catch (\Exception $exception) {
 
-		$pdo = new PDO($config['db']['dsn'], $config['db']['username'], $config['db']['password']);
+        }
 
-		$pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("EPDOStatement\EPDOStatement", array()));
+        $this->assertNotNull($logger->error);
+    }
 
-		/**
-		 * Generic type query with mix of camel-case and _ separated placeholders
-		 */
-		$query = "SELECT * FROM users WHERE user_id = :userId AND status = :user_status";
-		$stmt = $pdo->prepare($query);
+    public function testUnsuccessfulQueryExecutionLogsErrorsCorrectlyAndThrowsCaughtException()
+    {
+        $pdo = $this->getPdo();
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-		$userId 		= 123;
-		$user_status 	= "active";
+        $query = "SELECT something FROM non_existant_table";
 
-		$stmt->bindParam(":userId" 		, $userId 		, PDO::PARAM_INT);
-		$stmt->bindParam(":user_status" , $user_status 	, PDO::PARAM_STR);
+        $stmt = $pdo->prepare($query);
 
-		$result = $stmt->interpolateQuery();
+        $logger = new Logger;
 
-		$this->assertTrue(false != preg_match("/123/", $result));
-		$this->assertTrue(false != preg_match("/active/", $result));
+        $stmt->setLogger($logger);
 
-		$this->assertTrue(false == preg_match("/:userId/", $result));
-		$this->assertTrue(false == preg_match("/:user_status/", $result));
-	}
+        $this->setExpectedException(\Exception::class);
 
-	public function testQueryIsNotChangedIfNoParametersUsedInQuery()
-	{
-		$pdo = $this->getPdo();
+        try {
+            $stmt->execute();
+        } catch (\Exception $exception) {
+            $this->assertNotNull($logger->error);
 
-		$query = "SELECT * FROM test_table WHERE id = '123' AND userId = '456'";
+            throw($exception);
+        }
 
-		$stmt = $pdo->prepare($query);
+        $this->fail("Statement didn't rethrow exception");
+    }
 
-		$this->assertEquals($query, $stmt->interpolateQuery());
-	}
+    public function tetstInterpolationAllowsSuccessfulExecutionOfQueriesWithNamedPlaceholders()
+    {
+        $num = 3;
+        $string = "someString";
+
+        $pdo = $this->getPdo();
+
+        $query = "SELECT :num, :string";
+
+        $stmt = $pdo->prepare($query);
+
+        $stmt->bindParam(":num"   , $num   , PDO::PARAM_INT);
+        $stmt->bindParam(":string", $string, PDO::PARAM_STR);
+
+        $stmt->execute();
+
+        list($sum, $testString) = $stmt->fetch();
+
+        $this->assertEquals(3, $sum);
+        $this->assertEquals("test string", $testString);
+    }
+
+    public function testValuesAreSuccessfullyInterpolatedIfNoPdoProvidedToEPDOStatement()
+    {
+        $config = $this->getConfig();
+
+        $pdo = new PDO($config['db']['dsn'], $config['db']['username'], $config['db']['password']);
+
+        $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("EPDOStatement\EPDOStatement", array()));
+
+        /**
+         * Generic type query with mix of camel-case and _ separated placeholders
+         */
+        $query = "SELECT * FROM users WHERE user_id = :userId AND status = :user_status";
+        $stmt = $pdo->prepare($query);
+
+        $logger = new Logger;
+        $stmt->setLogger($logger);
+
+        $userId      = 123;
+        $user_status = "active";
+
+        $stmt->bindParam(":userId"     , $userId     , PDO::PARAM_INT);
+        $stmt->bindParam(":user_status", $user_status, PDO::PARAM_STR);
+
+        $result = $stmt->interpolateQuery();
+
+        $this->assertTrue(false != preg_match("/123/", $result));
+        $this->assertTrue(false != preg_match("/active/", $result));
+
+        $this->assertTrue(false == preg_match("/:userId/", $result));
+        $this->assertTrue(false == preg_match("/:user_status/", $result));
+
+        $this->assertContains(\EPDOStatement\EPDOStatement::WARNING_USING_ADDSLASHES, array_keys($logger->warning[0])[0]);
+    }
+
+    public function testQueryIsNotChangedIfNoParametersUsedInQuery()
+    {
+        $pdo = $this->getPdo();
+
+        $query = "SELECT * FROM test_table WHERE id = '123' AND userId = '456'";
+
+        $stmt = $pdo->prepare($query);
+
+        $this->assertEquals($query, $stmt->interpolateQuery());
+    }
 }

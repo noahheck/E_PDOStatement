@@ -19,9 +19,33 @@ namespace EPDOStatement;
 
 use \PDO as PDO;
 use \PDOStatement as PDOStatement;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 
-class EPDOStatement extends PDOStatement
+class EPDOStatement extends PDOStatement implements LoggerAwareInterface
 {
+    const WARNING_USING_ADDSLASHES = "addslashes is not suitable for production logging, etc. Please consider updating your processes to provide a valid PDO object that can perform the necessary translations and can be updated with your e.g. package management, etc.";
+
+    /**
+     * @var \PDO $_pdo
+     */
+    protected $_pdo = "";
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var string $fullQuery - will be populated with the interpolated db query string
+     */
+    public $fullQuery;
+
+    /**
+     * @var array $boundParams - array of arrays containing values that have been bound to the query as parameters
+     */
+    protected $boundParams = array();
+
     /**
      * The first argument passed in should be an instance of the PDO object. If so, we'll cache it's reference locally
      * to allow for the best escaping possible later when interpolating our query. Other parameters can be added if
@@ -36,19 +60,12 @@ class EPDOStatement extends PDOStatement
     }
 
     /**
-     * @var \PDO $_pdo
+     * @inheritdoc
      */
-    protected $_pdo = "";
-
-    /**
-     * @var string $fullQuery - will be populated with the interpolated db query string
-     */
-    public $fullQuery;
-
-    /**
-     * @var array $boundParams - array of arrays containing values that have been bound to the query as parameters
-     */
-    protected $boundParams = array();
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
 
     /**
      * Overrides the default \PDOStatement method to add the named parameter and it's reference to the array of bound
@@ -62,6 +79,14 @@ class EPDOStatement extends PDOStatement
      */
     public function bindParam($param, &$value, $datatype = PDO::PARAM_STR, $length = 0, $driverOptions = false)
     {
+        $this->debug(
+            "Binding parameter {param} (as parameter) as datatype {datatype}: current value {value}",
+            array(
+                "param"    => $param,
+                "datatype" => $datatype,
+                "value"    => $value,
+            ));
+
         $this->boundParams[$param] = array(
               "value"       => &$value
             , "datatype"    => $datatype
@@ -80,6 +105,14 @@ class EPDOStatement extends PDOStatement
      */
     public function bindValue($param, $value, $datatype = PDO::PARAM_STR)
     {
+        $this->debug(
+            "Binding parameter {param} (as value) as datatype {datatype}: value {value}",
+            array(
+                "param"    => $param,
+                "datatype" => $datatype,
+                "value"    => $value,
+            ));
+
         $this->boundParams[$param] = array(
               "value"       => $value
             , "datatype"    => $datatype
@@ -96,6 +129,8 @@ class EPDOStatement extends PDOStatement
      */
     public function interpolateQuery($inputParams = null)
     {
+        $this->debug("Interpolating query...");
+
         $testQuery = $this->queryString;
 
         $params = ($this->boundParams) ? $this->boundParams : $inputParams;
@@ -108,8 +143,8 @@ class EPDOStatement extends PDOStatement
 
                 $replValue = (is_array($value)) ? $value
                                                 : array(
-                                                      'value'       => $value
-                                                    , 'datatype'    => PDO::PARAM_STR
+                                                    'value'    => $value,
+                                                    'datatype' => PDO::PARAM_STR,
                                                 );
 
                 $replValue = $this->prepareValue($replValue);
@@ -121,7 +156,41 @@ class EPDOStatement extends PDOStatement
 
         $this->fullQuery = $testQuery;
 
+        $this->debug("Query interpolation complete");
+        $this->debug("Interpolated query: {query}", array("query" => $testQuery));
+
         return $testQuery;
+    }
+
+    /**
+     * Overrides the default \PDOStatement method to generate the full query string - then accesses and returns
+     * parent::execute method
+     * @param array $inputParams
+     * @return bool - default of \PDOStatement::execute()
+     */
+    public function execute($inputParams = null)
+    {
+        $this->interpolateQuery($inputParams);
+
+        try {
+            $response = parent::execute($inputParams);
+
+            if (!$response) {
+                $this->error("Failed executing query: {query}", array("query" => $this->fullQuery));
+
+                return $response;
+            }
+        } catch (\Exception $e) {
+            $this->error("Exception thrown executing query: {query}", array("query" => $this->fullQuery));
+            $this->error($e->getMessage(), array("exception" => $e));
+
+            throw $e;
+        }
+
+        $this->debug("Query executed: {query}", array("query" => $this->fullQuery));
+        $this->info($this->fullQuery);
+
+        return $response;
     }
 
     private function replaceMarker($queryString, $marker, $replValue)
@@ -139,20 +208,13 @@ class EPDOStatement extends PDOStatement
 
         $testParam = "/({$marker}(?!\w))(?=(?:[^\"']|[\"'][^\"']*[\"'])*$)/";
 
+        $this->debug("Replacing marker {marker} with value {value}",
+            array(
+                "marker" => $marker,
+                "value"  => $replValue,
+            ));
+
         return preg_replace($testParam, $replValue, $queryString, 1);
-    }
-
-    /**
-     * Overrides the default \PDOStatement method to generate the full query string - then accesses and returns
-     * parent::execute method
-     * @param array $inputParams
-     * @return bool - default of \PDOStatement::execute()
-     */
-    public function execute($inputParams = null)
-    {
-        $this->interpolateQuery($inputParams);
-
-        return parent::execute($inputParams);
     }
 
     /**
@@ -172,18 +234,66 @@ class EPDOStatement extends PDOStatement
     private function prepareValue($value)
     {
         if ($value['value'] === NULL) {
+            $this->debug("Value is null: returning 'NULL'");
+
             return 'NULL';
         }
 
-        if (!$this->_pdo) {
-            return "'" . addslashes($value['value']) . "'";
-        }
+        if (PDO::PARAM_INT === $value['datatype']) {
+            $this->debug("Preparing value {value} as integer", array("value" => $value));
 
-        if (PDO::PARAM_INT === $value['datatype'])
-        {
             return (int) $value['value'];
         }
 
+        if (!$this->_pdo) {
+            $this->debug("Preparing value {value} using addslashes", array("value" => $value));
+            $this->warn(self::WARNING_USING_ADDSLASHES);
+
+            return "'" . addslashes($value['value']) . "'";
+        }
+
+        $this->debug("Preparing value {value} as string", array("value" => $value));
+
         return  $this->_pdo->quote($value['value']);
+    }
+
+    /**
+     * @param string $message
+     * @param array $context
+     */
+    private function debug($message, $context = array())
+    {
+        if ($this->logger) {
+            $this->logger->debug($message, $context);
+        }
+    }
+
+    /**
+     * @param string $message
+     * @param array $context
+     */
+    private function warn($message, $context = array())
+    {
+        if ($this->logger) {
+            $this->logger->warning($message, $context);
+        }
+    }
+
+    /**
+     * @param string $message
+     * @param array $context
+     */
+    private function error($message, $context = array())
+    {
+        if ($this->logger) {
+            $this->logger->error($message, $context);
+        }
+    }
+
+    private function info($message, $context = array())
+    {
+        if ($this->logger) {
+            $this->logger->info($message);
+        }
     }
 }

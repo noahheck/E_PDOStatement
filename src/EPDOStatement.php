@@ -174,6 +174,12 @@ class EPDOStatement extends PDOStatement implements LoggerAwareInterface
 
         try {
             $response = parent::execute($inputParams);
+
+            if (!$response) {
+                $this->error("Failed executing query: {query}", array("query" => $this->fullQuery));
+
+                return $response;
+            }
         } catch (\Exception $e) {
             $this->error("Exception thrown executing query: {query}", array("query" => $this->fullQuery));
             $this->error($e->getMessage(), array("exception" => $e));

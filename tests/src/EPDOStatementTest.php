@@ -27,7 +27,7 @@ class Logger extends \Psr\Log\AbstractLogger
 
     public function log($level, $message, array $context = array())
     {
-        $this->$level[] = $message;
+        $this->$level[] = array($message => $context);
     }
 }
 
@@ -75,6 +75,7 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
          */
         $query = "SELECT * FROM users WHERE user_id = :userId AND status = :user_status";
         $stmt = $pdo->prepare($query);
+        $stmt->setLogger($this->logger);
 
         $userId      = 123;
         $user_status = "active";
@@ -279,13 +280,14 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($expected, $result);
     }
 
-    public function testInterpolationAllowsSuccessfulExecutionOfQueries()
+    public function testInterpolationAllowsSuccessfulExecutionOfQueriesAndLogsQueriesAsInfoIfLoggerProvided()
     {
         $pdo = $this->getPdo();
 
         $query = "SELECT ? + ? + ?, ?";
 
         $stmt = $pdo->prepare($query);
+        $stmt->setLogger($this->logger);
 
         $values = array(1, 1, 1, "test string");
 
@@ -295,6 +297,55 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals(3, $sum);
         $this->assertEquals("test string", $testString);
+
+        $this->assertEquals("SELECT '1' + '1' + '1', 'test string'", array_keys($this->logger->info[0])[0]);
+    }
+
+    public function testUnsuccessfulQueryExecutionLogsErrorsCorrectly()
+    {
+        $pdo = $this->getPdo();
+
+        $query = "SELECT something FROM non_existant_table";
+
+        $stmt = $pdo->prepare($query);
+
+        $logger = new Logger;
+
+        $stmt->setLogger($logger);
+
+        try {
+            $stmt->execute();
+        } catch (\Exception $exception) {
+
+        }
+
+        $this->assertNotNull($logger->error);
+    }
+
+    public function testUnsuccessfulQueryExecutionLogsErrorsCorrectlyAndThrowsCaughtException()
+    {
+        $pdo = $this->getPdo();
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $query = "SELECT something FROM non_existant_table";
+
+        $stmt = $pdo->prepare($query);
+
+        $logger = new Logger;
+
+        $stmt->setLogger($logger);
+
+        $this->setExpectedException(\Exception::class);
+
+        try {
+            $stmt->execute();
+        } catch (\Exception $exception) {
+            $this->assertNotNull($logger->error);
+
+            throw($exception);
+        }
+
+        $this->fail("Statement didn't rethrow exception");
     }
 
     public function tetstInterpolationAllowsSuccessfulExecutionOfQueriesWithNamedPlaceholders()
@@ -333,6 +384,9 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
         $query = "SELECT * FROM users WHERE user_id = :userId AND status = :user_status";
         $stmt = $pdo->prepare($query);
 
+        $logger = new Logger;
+        $stmt->setLogger($logger);
+
         $userId      = 123;
         $user_status = "active";
 
@@ -346,6 +400,8 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 
         $this->assertTrue(false == preg_match("/:userId/", $result));
         $this->assertTrue(false == preg_match("/:user_status/", $result));
+
+        $this->assertContains(\EPDOStatement\EPDOStatement::WARNING_USING_ADDSLASHES, array_keys($logger->warning[0])[0]);
     }
 
     public function testQueryIsNotChangedIfNoParametersUsedInQuery()

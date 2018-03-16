@@ -79,15 +79,13 @@ class EPDOStatement extends PDOStatement implements LoggerAwareInterface
      */
     public function bindParam($param, &$value, $datatype = PDO::PARAM_STR, $length = 0, $driverOptions = false)
     {
-        if ($this->logger) {
-            $this->logger->debug(
-                "Binding parameter {param} (as parameter) as datatype {datatype}: current value {value}",
-                array(
-                    "param"    => $param,
-                    "datatype" => $datatype,
-                    "value"    => $value,
-                ));
-        }
+        $this->debug(
+            "Binding parameter {param} (as parameter) as datatype {datatype}: current value {value}",
+            array(
+                "param"    => $param,
+                "datatype" => $datatype,
+                "value"    => $value,
+            ));
 
         $this->boundParams[$param] = array(
               "value"       => &$value
@@ -107,15 +105,13 @@ class EPDOStatement extends PDOStatement implements LoggerAwareInterface
      */
     public function bindValue($param, $value, $datatype = PDO::PARAM_STR)
     {
-        if ($this->logger) {
-            $this->logger->debug(
-                "Binding parameter {param} (as value) as datatype {datatype}: value {value}",
-                array(
-                    "param"    => $param,
-                    "datatype" => $datatype,
-                    "value"    => $value,
-                ));
-        }
+        $this->debug(
+            "Binding parameter {param} (as value) as datatype {datatype}: value {value}",
+            array(
+                "param"    => $param,
+                "datatype" => $datatype,
+                "value"    => $value,
+            ));
 
         $this->boundParams[$param] = array(
               "value"       => $value
@@ -133,9 +129,7 @@ class EPDOStatement extends PDOStatement implements LoggerAwareInterface
      */
     public function interpolateQuery($inputParams = null)
     {
-        if ($this->logger) {
-            $this->logger->debug("Interpolating query...");
-        }
+        $this->debug("Interpolating query...");
 
         $testQuery = $this->queryString;
 
@@ -149,8 +143,8 @@ class EPDOStatement extends PDOStatement implements LoggerAwareInterface
 
                 $replValue = (is_array($value)) ? $value
                                                 : array(
-                                                      'value'       => $value
-                                                    , 'datatype'    => PDO::PARAM_STR
+                                                    'value'    => $value,
+                                                    'datatype' => PDO::PARAM_STR,
                                                 );
 
                 $replValue = $this->prepareValue($replValue);
@@ -162,10 +156,8 @@ class EPDOStatement extends PDOStatement implements LoggerAwareInterface
 
         $this->fullQuery = $testQuery;
 
-        if ($this->logger) {
-            $this->logger->debug("Query interpolation complete");
-            $this->logger->debug("Interpolated query: {query}", array("query" => $testQuery));
-        }
+        $this->debug("Query interpolation complete");
+        $this->debug("Interpolated query: {query}", array("query" => $testQuery));
 
         return $testQuery;
     }
@@ -182,21 +174,17 @@ class EPDOStatement extends PDOStatement implements LoggerAwareInterface
 
         try {
             $response = parent::execute($inputParams);
-
-            if ($this->logger) {
-                $this->logger->info("Query executed: {query}", array("query" => $this->fullQuery));
-            }
         } catch (\Exception $e) {
-            if ($this->logger) {
-                $this->logger->error("Exception thrown executing query: {query}", array("query" => $this->fullQuery));
-                $this->logger->error($e->getMessage(), array("exception" => $e));
-            }
+            $this->error("Exception thrown executing query: {query}", array("query" => $this->fullQuery));
+            $this->error($e->getMessage(), array("exception" => $e));
 
             throw $e;
         }
 
+        $this->debug("Query executed: {query}", array("query" => $this->fullQuery));
+        $this->info($this->fullQuery);
+
         return $response;
-//        return parent::execute($inputParams);
     }
 
     private function replaceMarker($queryString, $marker, $replValue)
@@ -214,14 +202,11 @@ class EPDOStatement extends PDOStatement implements LoggerAwareInterface
 
         $testParam = "/({$marker}(?!\w))(?=(?:[^\"']|[\"'][^\"']*[\"'])*$)/";
 
-        if ($this->logger) {
-            $this->logger->debug(
-                "Replacing marker {marker} with value {value}",
-                array(
-                    "marker" => $marker,
-                    "value"  => $replValue,
-                ));
-        }
+        $this->debug("Replacing marker {marker} with value {value}",
+            array(
+                "marker" => $marker,
+                "value"  => $replValue,
+            ));
 
         return preg_replace($testParam, $replValue, $queryString, 1);
     }
@@ -243,34 +228,66 @@ class EPDOStatement extends PDOStatement implements LoggerAwareInterface
     private function prepareValue($value)
     {
         if ($value['value'] === NULL) {
-            if ($this->logger) {
-                $this->logger->debug("Value is null: returning 'NULL'");
-            }
+            $this->debug("Value is null: returning 'NULL'");
 
             return 'NULL';
         }
 
-        if (!$this->_pdo) {
-            if ($this->logger) {
-                $this->logger->debug("Preparing value {value} using addslashes", array("value" => $value));
-                $this->logger->warning(self::WARNING_USING_ADDSLASHES);
-            }
-
-            return "'" . addslashes($value['value']) . "'";
-        }
-
         if (PDO::PARAM_INT === $value['datatype']) {
-            if ($this->logger) {
-                $this->logger->debug("Preparing value {value} as integer", array("value" => $value));
-            }
+            $this->debug("Preparing value {value} as integer", array("value" => $value));
 
             return (int) $value['value'];
         }
 
-        if ($this->logger) {
-            $this->logger->debug("Preparing value {value} as string", array("value" => $value));
+        if (!$this->_pdo) {
+            $this->debug("Preparing value {value} using addslashes", array("value" => $value));
+            $this->warn(self::WARNING_USING_ADDSLASHES);
+
+            return "'" . addslashes($value['value']) . "'";
         }
 
+        $this->debug("Preparing value {value} as string", array("value" => $value));
+
         return  $this->_pdo->quote($value['value']);
+    }
+
+    /**
+     * @param string $message
+     * @param array $context
+     */
+    private function debug($message, $context = array())
+    {
+        if ($this->logger) {
+            $this->logger->debug($message, $context);
+        }
+    }
+
+    /**
+     * @param string $message
+     * @param array $context
+     */
+    private function warn($message, $context = array())
+    {
+        if ($this->logger) {
+            $this->logger->warning($message, $context);
+        }
+    }
+
+    /**
+     * @param string $message
+     * @param array $context
+     */
+    private function error($message, $context = array())
+    {
+        if ($this->logger) {
+            $this->logger->error($message, $context);
+        }
+    }
+
+    private function info($message, $context = array())
+    {
+        if ($this->logger) {
+            $this->logger->info($message);
+        }
     }
 }

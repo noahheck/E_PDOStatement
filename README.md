@@ -6,6 +6,10 @@ The result is generally suitable for logging activities, debugging and performan
 
 View the [changelog](CHANGELOG.md)
 
+### Update (March 2018)
+
+E_PDOStatement is now an instance of `Psr\Log\LoggerAwareInterface` to help make debugging easier.
+
 ## Usage
 
 PHP's PDO are a much improved way for handling database communications, but not being able to view a complete version of the query to be executed on the server after statement parameters have been interpolated can be frustrating.

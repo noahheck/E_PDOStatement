@@ -1,5 +1,12 @@
 ## Change Log
 
+### 2.3.0 (2018-03-16)
+
+#### Added
+
+- Updated to be instance of PSR-3 LoggerAwareInterface
+- Added logging behavior
+
 #### Fixed (2017-12-09)
 
 - Update copyright date

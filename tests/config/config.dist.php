@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright 2017 github.com/noahheck
+ * Copyright 2018 github.com/noahheck
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

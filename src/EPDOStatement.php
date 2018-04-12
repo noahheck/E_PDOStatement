@@ -206,15 +206,22 @@ class EPDOStatement extends PDOStatement implements LoggerAwareInterface
             $marker = (preg_match("/^:/", $marker)) ? $marker : ":" . $marker;
         }
 
-        $testParam = "/({$marker}(?!\w))(?=(?:[^\"']|[\"'][^\"']*[\"'])*$)/";
-
         $this->debug("Replacing marker {marker} with value {value}",
             array(
                 "marker" => $marker,
                 "value"  => $replValue,
             ));
 
-        return preg_replace($testParam, $replValue, $queryString, 1);
+        $testParam = "/({$marker}(?!\w))(?=(?:[^\"']|[\"'][^\"']*[\"'])*$)/";
+
+        // Back references may be replaced in the resultant interpolatedQuery, so we need to sanitize that syntax
+        $cleanBackRefCharMap = ['%'=>'%%', '$'=>'$%', '\\'=>'\\%'];
+
+        $backReferenceSafeReplValue = strtr($replValue, $cleanBackRefCharMap);
+
+        $interpolatedString = preg_replace($testParam, $backReferenceSafeReplValue, $queryString, 1);
+
+        return strtr($interpolatedString, array_flip($cleanBackRefCharMap));
     }
 
     /**

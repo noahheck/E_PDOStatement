@@ -1,5 +1,11 @@
 ## Change Log
 
+### 2.3.1 (2018-04-11)
+
+#### Fixed 
+
+- Back reference syntax in replacement value causing inaccurate string interpolation
+
 ### 2.3.0 (2018-03-16)
 
 #### Added

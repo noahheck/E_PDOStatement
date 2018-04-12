@@ -414,4 +414,21 @@ class EPDOStatementTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals($query, $stmt->interpolateQuery());
     }
+
+    public function testDollarSignBackReferenceSyntaxGetsOutputCorrectlyInFullQuery()
+    {
+        $pdo = $this->getPdo();
+
+        $hashedPassword = '$2y$10$yOwqQMxRo0AveSZ6I6Yhn.aMqbtGYrKQvcLGEtanplhdboUM1ffGi';
+
+        $query = "UPDATE users SET password = :password";
+
+        $stmt = $pdo->prepare($query);
+
+        $stmt->bindParam(":password", $hashedPassword);
+
+        $result = $stmt->interpolateQuery();
+
+        $this->assertEquals("UPDATE users SET password = '$hashedPassword'", $result);
+    }
 }

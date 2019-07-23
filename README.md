@@ -6,10 +6,6 @@ The result is generally suitable for logging activities, debugging and performan
 
 View the [changelog](CHANGELOG.md)
 
-### Update (March 2018)
-
-E_PDOStatement is now an instance of `Psr\Log\LoggerAwareInterface` to help make debugging easier.
-
 ## Usage
 
 PHP's PDO are a much improved way for handling database communications, but not being able to view a complete version of the query to be executed on the server after statement parameters have been interpolated can be frustrating.
@@ -121,13 +117,11 @@ $fullQuery  = $stmt->interpolateQuery($params);
 
 Preferred method: install using composer:
 
-```json
-"require" : {
-	"noahheck/e_pdostatement" : "2.*"
-}
+```bash
+composer require noahheck/e_pdostatement
 ```
 
-Alternatively, you can simply download the project, put it into a suitable location in your application directory and include into your project as needed.
+Alternatively, you can download the project, put it into a suitable location in your application directory and include into your project as needed.
 
 ## Configuration
 
@@ -152,8 +146,47 @@ $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, array("EPDOStatement\EPDOStatement
 
 That's all there is to it.
 
-Ideally, your project would have a PDO abstraction/wrapper class allowing you to implement this modification in only one place.
-If you don't have this luxury, success was shown with extending the \PDO class to set the ATTR_STATEMENT_CLASS attribute in the constructor of the PDO.
+## Debugging
+
+`EPDOStatement`'s `fullQuery` property and `interpolateQuery` method are great tools for viewing a resultant query string, and is designed to be suitable for query logging. They don't provide any insight into the process used to track datapoints and generate the resultant query string.
+
+To add debugging and development support, `EPDOStatement` also now implements PSR-3 `LoggerAwareInterface`. Provide an instance of a PSR-3 `LoggerInterface` (such as [Monolog](https://packagist.org/packages/monolog/monolog)), and you gain introspection into how your queries are being composed:
+
+```php
+<?php
+$logger = new \Monolog\Logger();
+$logger->pushHandler(new Monolog\Handler\StreamHandler('/path/to/log.file'));
+
+$stmt = $pdo->prepare("UPDATE contacts SET first_name = :first_name WHERE id = :id");
+
+$stmt->setLogger($logger);
+
+$stmt->bindParam(":first_name", $_POST['first_name'], PDO::PARAM_STR);
+$stmt->bindParam(":id", $_POST['id'], PDO::PARAM_INT);
+
+$stmt->execute();
+```
+
+After executing, the log file content will include:
+
+```
+DEBUG: Binding parameter :first_name (as parameter) as datatype 2: current value Noah
+DEBUG: Binding parameter :id (as parameter) as datatype 1: current value 1
+DEBUG: Interpolating query...
+DEBUG: Preparing value Noah as string
+DEBUG: Replacing marker :first_name with value 'Noah'
+DEBUG: Preparing value 1 as integer
+DEBUG: Replacing marker :id with value 1
+DEBUG: Query interpolation complete
+DEBUG: Interpolated query: UPDATE contacts SET first_name = 'Noah' WHERE id = 1
+INFO: UPDATE contacts SET first_name = 'Noah' WHERE id = 1
+```
+
+Logging levels utilized by `EPDOStatement` include debug, warn, error, and info.
+
+For more information, see the [PHP-FIG PSR-3 Logger documentation](https://www.php-fig.org/psr/psr-3/). For information on working with Monolog, see the [Monolog documentation](https://github.com/Seldaek/monolog).
+
+*Note*: `EPDOStatement` considers successful database query execution a PSR-3 *Interesting Event* and logs them at the `info` level. 
 
 ## Get in Touch
 There are a lot of forum posts related to or requesting this type of functionality, so hopefully someone somewhere will find it helpful. If it helps you, comments are of course appreciated.
